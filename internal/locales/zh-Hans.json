@@ -1,0 +1,527 @@
+{
+  "@@locale": "zh-Hans",
+  "editorLabel": "JSON 编辑器",
+  "@editorLabel": {
+    "description": "编辑器标签。"
+  },
+  "editorPlaceholder": "输入或粘贴 JSON",
+  "@editorPlaceholder": {
+    "description": "编辑器占位提示。"
+  },
+  "previousDifference": "上一个差异",
+  "@previousDifference": {
+    "description": "上一个差异。"
+  },
+  "nextDifference": "下一个差异",
+  "@nextDifference": {
+    "description": "下一个差异。"
+  },
+  "compareJSON": "对比 JSON",
+  "@compareJSON": {
+    "description": "对比 JSON。"
+  },
+  "editJSON": "编辑 JSON",
+  "@editJSON": {
+    "description": "编辑 JSON。"
+  },
+  "leftEditorLabel": "左侧 JSON 编辑器",
+  "@leftEditorLabel": {
+    "description": "左侧编辑器标签。"
+  },
+  "rightEditorLabel": "右侧 JSON 编辑器",
+  "@rightEditorLabel": {
+    "description": "右侧编辑器标签。"
+  },
+  "leftEditorPlaceholder": "输入或粘贴左侧 JSON",
+  "@leftEditorPlaceholder": {
+    "description": "左侧编辑器占位提示。"
+  },
+  "rightEditorPlaceholder": "输入或粘贴右侧 JSON",
+  "@rightEditorPlaceholder": {
+    "description": "右侧编辑器占位提示。"
+  },
+  "diffPreviewLabel": "JSON 差异预览",
+  "@diffPreviewLabel": {
+    "description": "差异预览标签。"
+  },
+  "settings": "设置",
+  "@settings": {
+    "description": "设置。"
+  },
+  "closeSettings": "关闭设置",
+  "@closeSettings": {
+    "description": "关闭设置。"
+  },
+  "closeToast": "关闭",
+  "@closeToast": {
+    "description": "关闭提示消息。"
+  },
+  "appearance": "外观",
+  "@appearance": {
+    "description": "外观。"
+  },
+  "theme": "主题",
+  "@theme": {
+    "description": "主题。"
+  },
+  "themeDescription": "切换后立即生效，自动模式跟随系统外观。",
+  "@themeDescription": {
+    "description": "主题说明。"
+  },
+  "colorTheme": "配色",
+  "@colorTheme": {
+    "description": "窗口渐变和界面配色。"
+  },
+  "colorThemeDescription": "浅色和深色外观各自选用一套，同时改变窗口背景和界面颜色。",
+  "@colorThemeDescription": {
+    "description": "配色说明。"
+  },
+  "lightAppearance": "浅色外观",
+  "@lightAppearance": {
+    "description": "浅色外观使用的配色。"
+  },
+  "darkAppearance": "深色外观",
+  "@darkAppearance": {
+    "description": "深色外观使用的配色。"
+  },
+  "washPetal": "花瓣",
+  "@washPetal": {
+    "description": "花瓣配色。"
+  },
+  "washMist": "薄雾",
+  "@washMist": {
+    "description": "薄雾配色。"
+  },
+  "washMeadow": "草地",
+  "@washMeadow": {
+    "description": "草地配色。"
+  },
+  "washDusk": "黄昏",
+  "@washDusk": {
+    "description": "黄昏配色。"
+  },
+  "washTide": "潮汐",
+  "@washTide": {
+    "description": "潮汐配色。"
+  },
+  "washApricot": "杏子",
+  "@washApricot": {
+    "description": "杏子配色。"
+  },
+  "washAurora": "极光",
+  "@washAurora": {
+    "description": "极光配色。"
+  },
+  "washDune": "沙丘",
+  "@washDune": {
+    "description": "沙丘配色。"
+  },
+  "washPaper": "白纸",
+  "@washPaper": {
+    "description": "白纸配色。"
+  },
+  "washPlain": "纯色",
+  "@washPlain": {
+    "description": "纯色配色，没有渐变。"
+  },
+  "interfaceZoom": "界面缩放",
+  "@interfaceZoom": {
+    "description": "整个窗口的界面缩放。"
+  },
+  "interfaceZoomDescription": "缩放整个窗口，包括侧栏、工具栏和编辑器。可用 ⌘+、⌘−、⌘0（Windows 为 Ctrl）调整。",
+  "@interfaceZoomDescription": {
+    "description": "界面缩放说明。"
+  },
+  "menuFile": "文件",
+  "@menuFile": { "description": "文件菜单。" },
+  "menuView": "视图",
+  "@menuView": { "description": "视图菜单。" },
+  "zoomIn": "放大界面",
+  "@zoomIn": { "description": "放大整个界面。" },
+  "zoomOut": "缩小界面",
+  "@zoomOut": { "description": "缩小整个界面。" },
+  "zoomReset": "重置界面缩放",
+  "@zoomReset": { "description": "恢复界面缩放为百分之百。" },
+  "lightTheme": "明亮",
+  "@lightTheme": {
+    "description": "浅色主题。"
+  },
+  "darkTheme": "夜晚",
+  "@darkTheme": {
+    "description": "深色主题。"
+  },
+  "systemTheme": "自动",
+  "@systemTheme": {
+    "description": "跟随系统的主题。"
+  },
+  "themeSelector": "主题选择",
+  "@themeSelector": {
+    "description": "主题选择器。"
+  },
+  "newFormat": "新建格式化",
+  "@newFormat": {
+    "description": "新建格式化标签页。"
+  },
+  "newComparison": "新建对比",
+  "@newComparison": {
+    "description": "新建对比标签页。"
+  },
+  "tabList": "标签列表",
+  "@tabList": {
+    "description": "标签页列表。"
+  },
+  "emptyTabs": "暂无标签页",
+  "@emptyTabs": {
+    "description": "侧边栏没有打开的标签页时显示的标题。"
+  },
+  "editorToolbar": "编辑工具栏",
+  "@editorToolbar": {
+    "description": "编辑器工具栏。"
+  },
+  "formatJSON": "格式化",
+  "@formatJSON": {
+    "description": "格式化。"
+  },
+  "compact": "压缩",
+  "@compact": {
+    "description": "压缩。"
+  },
+  "escape": "转义",
+  "@escape": {
+    "description": "转义。"
+  },
+  "unescape": "去转义",
+  "@unescape": {
+    "description": "去转义。"
+  },
+  "sortFields": "字段排序",
+  "@sortFields": {
+    "description": "字段排序。"
+  },
+  "foldAll": "全部折叠",
+  "@foldAll": {
+    "description": "全部折叠。"
+  },
+  "unfoldAll": "全部展开",
+  "@unfoldAll": {
+    "description": "全部展开。"
+  },
+  "softWrap": "自动换行",
+  "@softWrap": {
+    "description": "自动换行。"
+  },
+  "search": "搜索",
+  "@search": {
+    "description": "搜索。"
+  },
+  "copy": "复制",
+  "@copy": {
+    "description": "复制。"
+  },
+  "clear": "清空",
+  "@clear": {
+    "description": "清空。"
+  },
+  "sidebarToggle": "侧边栏",
+  "@sidebarToggle": {
+    "description": "侧边栏展开与收起开关。"
+  },
+  "findQuery": "查找",
+  "@findQuery": {
+    "description": "查找查询。"
+  },
+  "findMatchCase": "区分大小写",
+  "@findMatchCase": {
+    "description": "查找时区分大小写。"
+  },
+  "findWholeWord": "全字匹配",
+  "@findWholeWord": {
+    "description": "查找时全字匹配。"
+  },
+  "findRegexp": "使用正则表达式",
+  "@findRegexp": {
+    "description": "使用正则表达式查找。"
+  },
+  "findInSelection": "在选区中查找",
+  "@findInSelection": {
+    "description": "在选区中查找。"
+  },
+  "findPrevious": "上一个匹配",
+  "@findPrevious": {
+    "description": "上一个查找匹配项。"
+  },
+  "findNext": "下一个匹配",
+  "@findNext": {
+    "description": "下一个查找匹配项。"
+  },
+  "findReplace": "替换",
+  "@findReplace": {
+    "description": "替换。"
+  },
+  "findReplaceAll": "全部替换",
+  "@findReplaceAll": {
+    "description": "全部替换。"
+  },
+  "findClose": "关闭",
+  "@findClose": {
+    "description": "关闭查找。"
+  },
+  "withShortcut": "{label}（{shortcut}）",
+  "@withShortcut": {
+    "description": "附带快捷键的标签。",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "shortcut": {
+        "type": "String"
+      }
+    }
+  },
+  "formatTabTitle": "格式化 {number}",
+  "@formatTabTitle": {
+    "description": "格式化标签页标题。",
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "comparisonTabTitle": "对比 {number}",
+  "@comparisonTabTitle": {
+    "description": "对比标签页标题。",
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "countTabs": "标签页（{count, number, ::group-off}）",
+  "@countTabs": {
+    "description": "标签页数量。",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "closeTab": "关闭 {title}",
+  "@closeTab": {
+    "description": "关闭标签页。",
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "jsonErrorLocation": "JSON 格式错误：第 {line, number, ::group-off} 行，第 {column, number, ::group-off} 列：{detail}",
+  "@jsonErrorLocation": {
+    "description": "JSON 错误位置。",
+    "placeholders": {
+      "line": {
+        "type": "int"
+      },
+      "column": {
+        "type": "int"
+      },
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "diffLeftError": "左侧：{detail}",
+  "@diffLeftError": {
+    "description": "对比编辑器左侧错误。",
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "diffRightError": "右侧：{detail}",
+  "@diffRightError": {
+    "description": "对比编辑器右侧错误。",
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "minimizeWindow": "最小化窗口",
+  "@minimizeWindow": {
+    "description": "Windows 窗口最小化按钮的名称与提示。"
+  },
+  "maximizeWindow": "最大化窗口",
+  "@maximizeWindow": {
+    "description": "Windows 窗口最大化按钮的名称与提示。"
+  },
+  "restoreWindow": "还原窗口",
+  "@restoreWindow": {
+    "description": "Windows 窗口还原按钮的名称与提示。"
+  },
+  "closeWindow": "关闭窗口",
+  "@closeWindow": {
+    "description": "Windows 窗口关闭按钮的名称与提示。"
+  },
+  "editorSettings": "编辑器",
+  "@editorSettings": {
+    "description": "编辑器"
+  },
+  "diffSettings": "对比",
+  "@diffSettings": {
+    "description": "对比"
+  },
+  "editorFontSize": "字号",
+  "@editorFontSize": {
+    "description": "字号"
+  },
+  "editorFontSizeDescription": "调整编辑区和差异预览的文字大小。",
+  "@editorFontSizeDescription": {
+    "description": "调整编辑区和差异预览的文字大小。"
+  },
+  "editorLineHeight": "行高",
+  "@editorLineHeight": {
+    "description": "行高"
+  },
+  "editorLineHeightDescription": "行高相对于字号的倍数，同时应用到差异预览。",
+  "@editorLineHeightDescription": {
+    "description": "行高相对于字号的倍数，同时应用到差异预览。"
+  },
+  "editorIndentWidth": "缩进宽度",
+  "@editorIndentWidth": {
+    "description": "缩进宽度"
+  },
+  "editorIndentWidthDescription": "每级缩进的空格数，用于输入、格式化和字段排序；不会自动修改已有内容。",
+  "@editorIndentWidthDescription": {
+    "description": "每级缩进的空格数，用于输入、格式化和字段排序；不会自动修改已有内容。"
+  },
+  "editorDefaultWrap": "默认自动换行",
+  "@editorDefaultWrap": {
+    "description": "默认自动换行"
+  },
+  "editorDefaultWrapDescription": "仅用于新建文档，当前文档仍可在工具栏切换。",
+  "@editorDefaultWrapDescription": {
+    "description": "仅用于新建文档，当前文档仍可在工具栏切换。"
+  },
+  "editorWhitespace": "空白字符",
+  "@editorWhitespace": {
+    "description": "空白字符"
+  },
+  "editorWhitespaceDescription": "在输入编辑区显示空格和制表符标记。",
+  "@editorWhitespaceDescription": {
+    "description": "在输入编辑区显示空格和制表符标记。"
+  },
+  "whitespaceSelection": "仅选区",
+  "@whitespaceSelection": {
+    "description": "仅选区"
+  },
+  "whitespaceNone": "隐藏",
+  "@whitespaceNone": {
+    "description": "隐藏"
+  },
+  "whitespaceAll": "全部",
+  "@whitespaceAll": {
+    "description": "全部"
+  },
+  "whitespaceBoundary": "边界",
+  "@whitespaceBoundary": {
+    "description": "边界"
+  },
+  "whitespaceTrailing": "仅行尾",
+  "@whitespaceTrailing": {
+    "description": "仅行尾"
+  },
+  "editorIndentGuides": "缩进参考线",
+  "@editorIndentGuides": {
+    "description": "缩进参考线"
+  },
+  "editorIndentGuidesDescription": "在输入编辑区显示嵌套层级的参考线。",
+  "@editorIndentGuidesDescription": {
+    "description": "在输入编辑区显示嵌套层级的参考线。"
+  },
+  "editorActiveLine": "高亮当前行",
+  "@editorActiveLine": {
+    "description": "高亮当前行"
+  },
+  "editorActiveLineDescription": "高亮输入编辑区中光标所在的行。",
+  "@editorActiveLineDescription": {
+    "description": "高亮输入编辑区中光标所在的行。"
+  },
+  "editorAutoClose": "自动补全括号和引号",
+  "@editorAutoClose": {
+    "description": "自动补全括号和引号"
+  },
+  "editorAutoCloseDescription": "输入左括号或引号时自动补齐另一半。",
+  "@editorAutoCloseDescription": {
+    "description": "输入左括号或引号时自动补齐另一半。"
+  },
+  "diffLayout": "对比布局",
+  "@diffLayout": {
+    "description": "对比布局"
+  },
+  "diffLayoutDescription": "设置差异预览中两份文本的排列方式。",
+  "@diffLayoutDescription": {
+    "description": "设置差异预览中两份文本的排列方式。"
+  },
+  "diffLayoutSplit": "并排",
+  "@diffLayoutSplit": {
+    "description": "并排"
+  },
+  "diffLayoutUnified": "合并",
+  "@diffLayoutUnified": {
+    "description": "合并"
+  },
+  "diffInlineHighlight": "行内差异高亮",
+  "@diffInlineHighlight": {
+    "description": "行内差异高亮"
+  },
+  "diffInlineHighlightDescription": "设置差异预览中行内变化的高亮粒度。",
+  "@diffInlineHighlightDescription": {
+    "description": "设置差异预览中行内变化的高亮粒度。"
+  },
+  "diffInlineChar": "字符",
+  "@diffInlineChar": {
+    "description": "字符"
+  },
+  "diffInlineWord": "单词",
+  "@diffInlineWord": {
+    "description": "单词"
+  },
+  "diffInlineNone": "关闭",
+  "@diffInlineNone": {
+    "description": "关闭"
+  },
+  "settingControl": "{label}设置",
+  "@settingControl": {
+    "description": "设置控件的无障碍标签。",
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "about": "关于",
+  "@about": {
+    "description": "关于页面的关于文案。"
+  },
+  "applicationName": "应用名称",
+  "@applicationName": {
+    "description": "关于页面的应用名称文案。"
+  },
+  "applicationVersion": "版本号",
+  "@applicationVersion": {
+    "description": "关于页面的版本号文案。"
+  },
+  "applicationAuthor": "作者",
+  "@applicationAuthor": {
+    "description": "关于页面的作者文案。"
+  },
+  "transforming": "正在处理",
+  "@transforming": {
+    "description": "文档转换进行中的提示。"
+  },
+  "applicationRepository": "仓库地址",
+  "@applicationRepository": {
+    "description": "关于页面的仓库地址文案。"
+  }
+}
