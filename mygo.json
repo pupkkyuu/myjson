@@ -1,0 +1,11 @@
+{
+  "name": "MyJson",
+  "identifier": "com.myjson.app",
+  "version": "0.2.0",
+  "main": "./cmd/myjson",
+  "i18n": {
+    "dir": "internal/locales",
+    "source": "zh-Hans"
+  },
+  "icon": "assets/icons/icon.png"
+}

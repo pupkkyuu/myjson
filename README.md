@@ -1,52 +1,39 @@
-> 🚧 项目处于开发阶段，仅在MacOS经过测试
+# MyJson
 
-# JSONPal
+MyJson 是一款基于 Go 和 MyGo 构建的原生桌面 JSON 工具。
 
-这是一款基于Electron的JSON工具，支持编辑、格式化和差异对比。
+已支持的功能：格式化、压缩、转义、去转义、字段排序、差异对比
 
+## 界面预览
 
-## 功能预览
-
-JSON 编辑与格式化
-
-![JSON 编辑器](docs/images/screenshot-editor.png)
-
-JSON 差异对比
-
-![JSON 差异对比](docs/images/screenshot-diff.png)
+![format](docs/images/screenshot_format.png)
+![diff](docs/images/screenshot_diff.png)
 
 ## 下载安装
 
-前往**Releases**页面下载对应平台的版本。
+前往 [Releases](https://github.com/pupkkyuu/myjson/releases) 下载安装包。
 
-| 平台 | 安装包 |
-|---|---|
-| macOS | DMG |
-| Windows | EXE 安装版 / Portable 便携版 |
-| Linux | AppImage / tar.gz |
+## 从源码运行
 
-## 本地开发
-
-安装依赖：
+需要 Go **1.27.3 或更高版本**。
 
 ```bash
-npm install
+git clone https://github.com/pupkkyuu/myjson.git
+cd myjson
+go mod download
+go tool mygo dev
 ```
 
-启动开发环境：
+## 构建
 
 ```bash
-npm run dev
+# macOS Apple Silicon
+go tool mygo build -platform darwin/arm64 -o build
+
+# Windows amd64
+go tool mygo build -platform windows/amd64 -o build
 ```
 
-构建应用：
+## 许可证
 
-```bash
-npm run build:mac
-npm run build:win
-npm run build:linux
-```
-
-## 致谢
-
-项目的功能与交互设计均源自于 [zjson](https://github.com/CN-Tower/zjson)，感谢作者的开源。git push origin v0.1.1
+[MIT License](LICENSE)

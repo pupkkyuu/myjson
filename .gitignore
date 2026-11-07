@@ -1,6 +1,97 @@
-node_modules/
-out/
-dist/
-.DS_Store
+
+# =========================
+# Go 构建产物
+# =========================
+/bin/
+/dist/
+/build/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+*.prof
+.mygo
+
+# =========================
+# Go 工作区
+# =========================
+/vendor/
+go.work.sum
+
+# =========================
+# 测试与覆盖率
+# =========================
+coverage.out
+coverage.html
+*.coverprofile
+*.cover
+*.prof
+
+# =========================
+# 日志
+# =========================
 *.log
-*.tsbuildinfo
+/logs/
+
+# =========================
+# 环境配置与密钥
+# =========================
+.env
+.env.*
+!.env.example
+!.env.sample
+*.pem
+*.key
+secrets/
+config.local.yaml
+config.local.yml
+config.local.json
+
+# =========================
+# IDE 与编辑器
+# =========================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# =========================
+# 临时文件
+# =========================
+*.tmp
+*.temp
+*.bak
+*.orig
+*.cache
+tmp/
+
+# =========================
+# 本地数据库
+# =========================
+*.db
+*.sqlite
+*.sqlite3
+
+# =========================
+# 调试
+# =========================
+core
+core.*
+*.core
+
+# =========================
+# 操作系统专用文件
+# =========================
+.AppleDouble
+.LSOverride
+ehthumbs.db
+Desktop.ini
+
+# Lucide 生成器临时文件
+/pkg/icons/**/.icongen-*

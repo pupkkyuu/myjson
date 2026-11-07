@@ -16,68 +16,82 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 22
+      - uses: actions/checkout@v4
       - name: Validate version and release notes
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
         run: |
-          node --input-type=module <<'NODE'
-          import { readFileSync } from 'node:fs';
-          const { version } = JSON.parse(readFileSync('package.json', 'utf8'));
-          if (process.env.GITHUB_REF_NAME !== `v${version}`) {
-            throw new Error('标签必须与 package.json 版本一致，例如 v0.1.0');
-          }
-          const path = `docs/releases/${version}.md`;
-          if (!readFileSync(path, 'utf8').trim()) {
-            throw new Error(`版本说明不能为空：${path}`);
-          }
-          console.log(`Validated v${version} and ${path}`);
-          NODE
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          version = json.loads(Path('mygo.json').read_text(encoding='utf-8'))['version']
+          if os.environ['RELEASE_TAG'] != f'v{version}':
+              raise SystemExit('Tag must match the version in mygo.json')
+          notes = Path('docs/releases') / f'{version}.md'
+          if not notes.read_text(encoding='utf-8').strip():
+              raise SystemExit(f'Release notes are empty: {notes}')
+          PY
+
+  test:
+    needs: validate
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go test ./...
+      - run: go vet ./...
 
   build:
-    needs: validate
+    needs: [validate, test]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - os: macos-latest
-            platform: mac
-            arch: x64
-          - os: macos-latest
-            platform: mac
-            arch: arm64
+            platform: darwin/arm64
+            target: darwin-arm64
           - os: windows-latest
-            platform: win
-            arch: x64
-          - os: ubuntu-latest
-            platform: linux
-            arch: x64
+            platform: windows/amd64
+            target: windows-amd64
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm run typecheck
-      - run: npm run build
-      - name: Package
-        run: npx electron-builder --${{ matrix.platform }} --${{ matrix.arch }} --publish never
-      - name: Upload packages
-        uses: actions/upload-artifact@v7
+          go-version-file: go.mod
+      - name: Build and package
+        shell: bash
+        run: go tool mygo build -platform '${{ matrix.platform }}' -o dist
+      - name: Collect required packages
+        shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+        run: |
+          set -euo pipefail
+          mkdir -p release-assets
+          case "$TARGET" in
+            darwin-arm64)
+              cp dist/"$TARGET"/*.dmg release-assets/
+              ;;
+            windows-amd64)
+              cp dist/"$TARGET"/*-setup-*.exe release-assets/
+              ;;
+            *)
+              echo "Unsupported release target: $TARGET" >&2
+              exit 1
+              ;;
+          esac
+      - uses: actions/upload-artifact@v4
         with:
-          name: packages-${{ matrix.platform }}-${{ matrix.arch }}
+          name: packages-${{ matrix.target }}
           if-no-files-found: error
           compression-level: 0
           retention-days: 7
-          path: |
-            dist/*.dmg
-            dist/*.zip
-            dist/*.exe
-            dist/*.AppImage
-            dist/*.tar.gz
+          path: release-assets/*
 
   publish:
     needs: build
@@ -85,8 +99,8 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/download-artifact@v8
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
         with:
           pattern: packages-*
           merge-multiple: true
@@ -104,19 +118,14 @@ jobs:
           if [[ "$RELEASE_TAG" == *-* ]]; then
             prerelease=true
           fi
-
-          # Create a draft first, so a failed upload does not expose a partial release.
-          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            gh release create "$RELEASE_TAG" \
-              --verify-tag --draft \
-              --title "JSONPal $RELEASE_TAG" \
-              --notes-file "$notes"
-          fi
-
-          # --clobber lets a failed run resume uploading to the same release.
-          gh release upload "$RELEASE_TAG" release-assets/* --clobber
+          # A draft prevents a failed upload from exposing a partial release.
+          gh release create "$RELEASE_TAG" \
+            --verify-tag --draft \
+            --title "MyJson $RELEASE_TAG" \
+            --notes-file "$notes"
+          gh release upload "$RELEASE_TAG" release-assets/*
           gh release edit "$RELEASE_TAG" \
-            --title "JSONPal $RELEASE_TAG" \
+            --title "MyJson $RELEASE_TAG" \
             --notes-file "$notes" \
             --prerelease="$prerelease" \
             --draft=false
