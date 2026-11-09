@@ -16,9 +16,9 @@
   "@nextDifference": {
     "description": "下一个差异。"
   },
-  "compareJSON": "对比 JSON",
+  "compareJSON": "对比",
   "@compareJSON": {
-    "description": "对比 JSON。"
+    "description": "对比。"
   },
   "editJSON": "编辑 JSON",
   "@editJSON": {
@@ -27,6 +27,10 @@
   "leftEditorLabel": "左侧 JSON 编辑器",
   "@leftEditorLabel": {
     "description": "左侧编辑器标签。"
+  },
+  "inputDivider": "对比输入区分隔线",
+  "@inputDivider": {
+    "description": "对比输入区左右编辑器之间的分隔线。"
   },
   "rightEditorLabel": "右侧 JSON 编辑器",
   "@rightEditorLabel": {

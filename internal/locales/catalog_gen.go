@@ -91,16 +91,16 @@ func (msgs Messages) NextDifference() string {
 	return Catalog.Format(msgs.locale, "nextDifference", nil)
 }
 
-// CompareJSON says "对比 JSON"
+// CompareJSON says "对比"
 // in the language the app shows.
 //
-// 对比 JSON。
+// 对比。
 func CompareJSON() string { return In(i18n.Locale()).CompareJSON() }
 
-// CompareJSON says "对比 JSON"
+// CompareJSON says "对比"
 // in the language of msgs.
 //
-// 对比 JSON。
+// 对比。
 func (msgs Messages) CompareJSON() string {
 	return Catalog.Format(msgs.locale, "compareJSON", nil)
 }
@@ -131,6 +131,20 @@ func LeftEditorLabel() string { return In(i18n.Locale()).LeftEditorLabel() }
 // 左侧编辑器标签。
 func (msgs Messages) LeftEditorLabel() string {
 	return Catalog.Format(msgs.locale, "leftEditorLabel", nil)
+}
+
+// InputDivider says "对比输入区分隔线"
+// in the language the app shows.
+//
+// 对比输入区左右编辑器之间的分隔线。
+func InputDivider() string { return In(i18n.Locale()).InputDivider() }
+
+// InputDivider says "对比输入区分隔线"
+// in the language of msgs.
+//
+// 对比输入区左右编辑器之间的分隔线。
+func (msgs Messages) InputDivider() string {
+	return Catalog.Format(msgs.locale, "inputDivider", nil)
 }
 
 // RightEditorLabel says "右侧 JSON 编辑器"

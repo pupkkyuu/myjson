@@ -27,7 +27,7 @@ func TestSettingsApplyImmediatelyAndSaveAfterDebounce(t *testing.T) {
 	ed := app.active.(*format.FormatEditor)
 	tt.Key(ui.Cmd, ui.KeyComma)
 	click(t, tt, locales.EditorSettings())
-	click(t, tt, locales.SettingControl(locales.EditorFontSize()))
+	clickPreferenceControl(t, tt, ui.RoleSlider, locales.EditorFontSize())
 	tt.Key(0, ui.KeyEnd)
 	if ed.Font.Size != 28 {
 		t.Fatalf("font size not applied immediately: got %g", ed.Font.Size)

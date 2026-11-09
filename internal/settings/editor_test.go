@@ -13,12 +13,34 @@ import (
 	"myjson/internal/locales"
 )
 
+// settingControl looks up the actual control, which shares its accessible
+// name with the visible label after LabelledBy associates them.
+func settingControl(tt *ui.Tester, label string) (ui.AccessInfo, bool) {
+	for _, role := range []ui.Role{ui.RoleSlider, ui.RoleSwitch, ui.RolePopUpButton} {
+		if control, ok := tt.AccessByRole(role, label); ok {
+			return control, true
+		}
+	}
+	return ui.AccessInfo{}, false
+}
+
+func clickSettingControl(t *testing.T, tt *ui.Tester, label string) {
+	t.Helper()
+	control, ok := settingControl(tt, label)
+	if !ok {
+		t.Fatalf("未找到设置控件 %q", label)
+	}
+	r := control.Bounds
+	tt.ClickAt(r.X+r.W/2, r.Y+r.H/2)
+}
+
 func revealSetting(t *testing.T, tt *ui.Tester, label string) {
 	t.Helper()
 	panel, _ := tt.Find(locales.Settings())
 	tt.Scroll(panel.X+panel.W-25, panel.Y+panel.H/2, 0, -10000)
 	for range 30 {
-		r, ok := tt.Find(locales.SettingControl(label))
+		control, ok := settingControl(tt, label)
+		r := control.Bounds
 		if ok && r.W > 0 && r.H >= 20 && r.Y >= panel.Y+64 && r.Y+r.H < panel.Y+panel.H-4 {
 			return
 		}
@@ -30,9 +52,7 @@ func revealSetting(t *testing.T, tt *ui.Tester, label string) {
 func chooseSetting(t *testing.T, tt *ui.Tester, label, choice string) {
 	t.Helper()
 	revealSetting(t, tt, label)
-	if err := tt.Click(locales.SettingControl(label)); err != nil {
-		t.Fatal(err)
-	}
+	clickSettingControl(t, tt, label)
 	if err := tt.Click(choice); err != nil {
 		t.Fatal(err)
 	}
@@ -45,9 +65,7 @@ func TestEditorAndDiffSettingsControls(t *testing.T) {
 		t.Fatal(err)
 	}
 	p := state.Preferences()
-	if err := tt.Click(locales.SettingControl(locales.EditorFontSize())); err != nil {
-		t.Fatal(err)
-	}
+	clickSettingControl(t, tt, locales.EditorFontSize())
 	tt.Key(0, ui.KeyEnd)
 	if p.FontSize != 28 {
 		t.Fatalf("字号未响应键盘：%g", p.FontSize)
@@ -57,9 +75,7 @@ func TestEditorAndDiffSettingsControls(t *testing.T) {
 	chooseSetting(t, tt, locales.EditorWhitespace(), locales.WhitespaceTrailing())
 	for _, label := range []string{locales.EditorDefaultWrap(), locales.EditorIndentGuides(), locales.EditorActiveLine(), locales.EditorAutoClose()} {
 		revealSetting(t, tt, label)
-		if err := tt.Click(locales.SettingControl(label)); err != nil {
-			t.Fatal(err)
-		}
+		clickSettingControl(t, tt, label)
 	}
 	if p.LineHeight != 1.8 || p.TabSize != 4 || p.Whitespace != mygoeditor.WhitespaceTrailing ||
 		!p.DefaultWrap || p.IndentGuides || !p.ActiveLine || p.AutoClose {
@@ -73,11 +89,10 @@ func TestEditorAndDiffSettingsControls(t *testing.T) {
 	if p.DiffLayout != mygoeditor.DiffUnified || p.DiffInline != mygoeditor.DiffInlineWord {
 		t.Fatalf("对比控件未应用设置：%+v", p)
 	}
-	if err := tt.Click(locales.SettingControl(locales.DiffInlineHighlight())); err != nil {
-		t.Fatal(err)
-	}
+	clickSettingControl(t, tt, locales.DiffInlineHighlight())
 	tt.Key(0, ui.KeyEscape)
-	if !state.Open || !tt.Focused(locales.SettingControl(locales.DiffInlineHighlight())) {
+	focused, _ := settingControl(tt, locales.DiffInlineHighlight())
+	if !state.Open || !focused.Focused {
 		t.Fatal("Esc 应先关闭下拉并保留控件焦点")
 	}
 	tt.Key(0, ui.KeyEscape)
@@ -113,7 +128,8 @@ func TestNewSettingsCategoriesLayout(t *testing.T) {
 						panel, _ := tt.Find(locales.Settings())
 						for _, label := range labels {
 							revealSetting(t, tt, label)
-							r, ok := tt.Find(locales.SettingControl(label))
+							control, ok := settingControl(tt, label)
+							r := control.Bounds
 							if !ok || r.W <= 0 || r.H <= 0 || r.X < panel.X || r.X+r.W > panel.X+panel.W+1 ||
 								r.Y < panel.Y || r.Y+r.H > panel.Y+panel.H+1 {
 								t.Fatalf("设置控件不可滚动访问：%q %+v，面板 %+v", label, r, panel)
@@ -124,9 +140,7 @@ func TestNewSettingsCategoriesLayout(t *testing.T) {
 							selectLabel, optionLabel = locales.EditorWhitespace(), locales.WhitespaceTrailing()
 						}
 						revealSetting(t, tt, selectLabel)
-						if err := tt.Click(locales.SettingControl(selectLabel)); err != nil {
-							t.Fatal(err)
-						}
+						clickSettingControl(t, tt, selectLabel)
 						option, ok := tt.Find(optionLabel)
 						if !ok || option.X < 0 || option.Y < 0 || option.X+option.W > float32(width)+1 || option.Y+option.H > 401 {
 							t.Fatalf("下拉选项超出窗口：%q %+v", optionLabel, option)
@@ -157,5 +171,54 @@ func TestNewSettingsCategoriesLayout(t *testing.T) {
 				}
 			}
 		}
+	}
+}
+
+func TestSettingTitlesAssociateControls(t *testing.T) {
+	state := State{Open: true, Category: editorCategory}
+	tt := ui.NewTester(func(c *ui.Context) { View(c, &state, 48) }, 1000, 650)
+	p := state.Preferences()
+
+	// The title toggles the switch exactly once and names it to assistive technology.
+	revealSetting(t, tt, locales.EditorDefaultWrap())
+	if err := tt.Click(locales.EditorDefaultWrap()); err != nil {
+		t.Fatal(err)
+	}
+	if !p.DefaultWrap {
+		t.Fatal("点击标题应切换自动换行")
+	}
+	if a, ok := tt.AccessByRole(ui.RoleSwitch, locales.EditorDefaultWrap()); !ok || !a.Checked {
+		t.Fatalf("开关的可访问名称或状态错误：%+v，存在=%v", a, ok)
+	}
+	if err := tt.Click(locales.EditorDefaultWrap()); err != nil {
+		t.Fatal(err)
+	}
+	if p.DefaultWrap {
+		t.Fatal("再次点击标题应关闭自动换行")
+	}
+
+	// Select and slider captions focus their control for keyboard use.
+	revealSetting(t, tt, locales.EditorLineHeight())
+	if err := tt.Click(locales.EditorLineHeight()); err != nil {
+		t.Fatal(err)
+	}
+	if a, ok := tt.AccessByRole(ui.RolePopUpButton, locales.EditorLineHeight()); !ok || !a.Focused {
+		t.Fatalf("点击行高标题应聚焦选择器：%+v，存在=%v", a, ok)
+	}
+	tt.Key(0, ui.KeySpace)
+	if !tt.HasText("1.8") {
+		t.Fatal("聚焦选择器后空格应打开选项")
+	}
+	tt.Key(0, ui.KeyEscape)
+	revealSetting(t, tt, locales.EditorFontSize())
+	if err := tt.Click(locales.EditorFontSize()); err != nil {
+		t.Fatal(err)
+	}
+	if a, ok := tt.AccessByRole(ui.RoleSlider, locales.EditorFontSize()); !ok || !a.Focused {
+		t.Fatalf("点击字号标题应聚焦滑块：%+v，存在=%v", a, ok)
+	}
+	tt.Key(0, ui.KeyEnd)
+	if p.FontSize != 28 {
+		t.Fatalf("标题聚焦后键盘未调整字号：%g", p.FontSize)
 	}
 }

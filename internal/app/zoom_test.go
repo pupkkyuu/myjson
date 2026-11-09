@@ -48,7 +48,7 @@ func TestWindowZoomShortcutsAndSettings(t *testing.T) {
 	click(t, tt, locales.Settings())
 	tt.Key(ui.Cmd, ui.KeyEqual)
 	check(110)
-	click(t, tt, locales.SettingControl(locales.InterfaceZoom()))
+	clickPreferenceControl(t, tt, ui.RolePopUpButton, locales.InterfaceZoom())
 	click(t, tt, "125%")
 	check(125)
 	tt.Key(ui.Cmd, ui.Key0)
