@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	applicationVersion    = "0.2.0"
+	applicationVersion    = "0.2.1"
 	applicationAuthor     = "pupkkyuu"
 	applicationRepository = "https://github.com/pupkkyuu/myjson"
 )
