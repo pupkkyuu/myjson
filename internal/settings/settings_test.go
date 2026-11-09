@@ -139,7 +139,7 @@ func TestSettingsCategoryState(t *testing.T) {
 		t.Fatal("Tab 应离开分类侧栏并进入内容区域")
 	}
 	tt.Key(0, ui.KeyTab)
-	if !tt.Focused(locales.ThemeSelector()) {
+	if control, _ := settingControl(tt, locales.Theme()); !control.Focused {
 		t.Fatal("Tab 应继续进入主题选择器")
 	}
 }
@@ -167,7 +167,8 @@ func TestSettingsSidebarLayoutWithoutSearch(t *testing.T) {
 					panel, panelOK := tt.Find(locales.Settings())
 					nav, navOK := tt.Find(locales.Appearance())
 					description, descriptionOK := tt.Find(locales.ThemeDescription())
-					selector, selectorOK := tt.Find(locales.ThemeSelector())
+					selectorInfo, selectorOK := settingControl(tt, locales.Theme())
+					selector := selectorInfo.Bounds
 					closeButton, closeOK := tt.Find(locales.CloseSettings())
 					if !panelOK || !navOK || !descriptionOK || !selectorOK || !closeOK {
 						t.Fatalf("设置布局丢失控件：%v", tt.Texts())
@@ -204,9 +205,7 @@ func TestSettingsSidebarLayoutWithoutSearch(t *testing.T) {
 							t.Fatalf("保存设置截图失败：%v / %v", err, closeErr)
 						}
 					}
-					if err := tt.Click(locales.ThemeSelector()); err != nil {
-						t.Fatal(err)
-					}
+					clickSettingControl(t, tt, locales.Theme())
 					for _, label := range []string{locales.LightTheme(), locales.DarkTheme()} {
 						r, ok := tt.Find(label)
 						if !ok || r.W <= 0 || r.H <= 0 || r.X < 0 || r.Y < 0 || r.X+r.W > float32(width)+1 || r.Y+r.H > float32(height)+1 {
@@ -224,9 +223,7 @@ func TestSettingsPopupDismissal(t *testing.T) {
 	tt := ui.NewTester(func(c *ui.Context) { View(c, &state, 48) }, 760, 650)
 	popupVisible := func() bool { return tt.HasText(locales.LightTheme()) && tt.HasText(locales.DarkTheme()) }
 	for _, closeBy := range []string{"Esc", "面板空白"} {
-		if err := tt.Click(locales.ThemeSelector()); err != nil {
-			t.Fatal(err)
-		}
+		clickSettingControl(t, tt, locales.Theme())
 		if !popupVisible() {
 			t.Fatal("点击选择器未展开主题选项")
 		}
@@ -239,7 +236,8 @@ func TestSettingsPopupDismissal(t *testing.T) {
 		if !state.Open || popupVisible() {
 			t.Fatalf("%s 未仅关闭下拉框", closeBy)
 		}
-		if closeBy == "Esc" && !tt.Focused(locales.ThemeSelector()) {
+		control, _ := settingControl(tt, locales.Theme())
+		if closeBy == "Esc" && !control.Focused {
 			t.Fatal("Esc 关闭下拉后未保留选择器焦点")
 		}
 	}
@@ -279,5 +277,28 @@ func TestThemeSelectorKeyboardNavigation(t *testing.T) {
 	tt.Key(0, ui.KeyEscape)
 	if choice != mygo.ThemeDark || len(applied) != 2 {
 		t.Fatal("Esc 取消选择仍应用了高亮选项")
+	}
+}
+
+func TestAppearanceTitlesFocusTheirSelectors(t *testing.T) {
+	state := State{Open: true}
+	tt := ui.NewTester(func(c *ui.Context) { View(c, &state, 48) }, 1000, 650)
+	for _, label := range []string{locales.Theme(), locales.InterfaceZoom()} {
+		if err := tt.Click(label); err != nil {
+			t.Fatal(err)
+		}
+		if a, ok := tt.AccessByRole(ui.RolePopUpButton, label); !ok || !a.Focused {
+			t.Fatalf("点击 %q 标题未聚焦选择器：%+v，存在=%v", label, a, ok)
+		}
+	}
+	state.Category = colorCategory
+	tt.Frame()
+	for _, label := range []string{locales.LightAppearance(), locales.DarkAppearance()} {
+		if err := tt.Click(label); err != nil {
+			t.Fatal(err)
+		}
+		if a, ok := tt.AccessByRole(ui.RolePopUpButton, label); !ok || !a.Focused {
+			t.Fatalf("点击 %q 标题未聚焦选择器：%+v，存在=%v", label, a, ok)
+		}
 	}
 }

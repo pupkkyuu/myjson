@@ -22,9 +22,7 @@ func TestColorSettingsSeparateAndPreview(t *testing.T) {
 		if tc.dark {
 			label = locales.DarkAppearance()
 		}
-		if err := tt.Click(locales.SettingControl(label)); err != nil {
-			t.Fatal(err)
-		}
+		clickSettingControl(t, tt, label)
 		if err := tt.Click(tc.label); err != nil {
 			t.Fatal(err)
 		}
@@ -60,8 +58,9 @@ func TestColorSettingsLayout(t *testing.T) {
 				c.SetTheme(&theme)
 				View(c, &state, 48)
 			}, tc.w, tc.h)
-			for _, label := range []string{locales.SettingControl(locales.LightAppearance()), locales.SettingControl(locales.DarkAppearance())} {
-				r, ok := tt.Find(label)
+			for _, label := range []string{locales.LightAppearance(), locales.DarkAppearance()} {
+				control, ok := settingControl(tt, label)
+				r := control.Bounds
 				if !ok || r.W <= 0 || r.X < 0 || r.X+r.W > float32(tc.w)+1 {
 					t.Fatalf("配色选择器越界 %s: %+v", label, r)
 				}

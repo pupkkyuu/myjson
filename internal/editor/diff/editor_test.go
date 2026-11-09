@@ -2,6 +2,7 @@ package diff
 
 import (
 	"fmt"
+	"math"
 	"strings"
 	"testing"
 	"time"
@@ -70,6 +71,51 @@ func TestDiffIdentityAndSharedBuffers(t *testing.T) {
 	}
 	if !e.TransformEnabled() || e.Loading() || e.Comparing() || e.CopyEnabled() {
 		t.Fatal("新对比编辑器的操作状态不正确")
+	}
+}
+
+func TestInputSplitResizeAndRestore(t *testing.T) {
+	e := NewDiffEditor("editor-1", `{"left":1}`, `{"right":2}`)
+	tt, _ := mountDiff(e)
+	tt.Move(500, 300)
+	if tt.Cursor() != ui.CursorResizeEW {
+		t.Fatal("输入区分隔线应支持拖动")
+	}
+	tt.Press(500, 300)
+	tt.Move(650, 300)
+	tt.Release(650, 300)
+	if e.inputSplit < 64 || e.inputSplit > 66 {
+		t.Fatalf("拖动后的左侧比例 = %g，期望约 65%%", e.inputSplit)
+	}
+	r, ok := tt.Find(locales.RightEditorLabel())
+	if !ok || r.X < 640 || r.X > 660 {
+		t.Fatalf("右侧编辑器未跟随分隔线：%+v", r)
+	}
+	if e.left.Buffer.String() != `{"left":1}` || e.right.Buffer.String() != `{"right":2}` {
+		t.Fatal("调整分隔线不应修改输入内容")
+	}
+	resized := e.inputSplit
+	e.ToggleComparison()
+	tt.Frame()
+	e.ToggleComparison()
+	tt.Frame()
+	if e.inputSplit != resized {
+		t.Fatal("切换预览不应重置输入区比例")
+	}
+	// 拖动会聚焦分隔线，返回输入区后重新点击以验证键盘调整。
+	tt.ClickAt(650, 300)
+	tt.Key(0, ui.KeyLeft)
+	if e.inputSplit >= resized {
+		t.Fatal("左方向键应缩小左侧输入区")
+	}
+	x := (1000 - 1) * e.inputSplit / 100
+	tt.ClickAt(x, 300)
+	tt.ClickAt(x, 300)
+	if math.Abs(float64(e.inputSplit-50)) > .01 {
+		t.Fatalf("双击分隔线应恢复均分，得到 %g%%", e.inputSplit)
+	}
+	if fresh := NewDiffEditor("editor-2", "", ""); fresh.inputSplit != 50 || fresh.preview.SplitPercent != 0 {
+		t.Fatal("新对比编辑器应使用默认比例")
 	}
 }
 

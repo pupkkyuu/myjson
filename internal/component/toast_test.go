@@ -123,7 +123,7 @@ func TestToastsStackAndPlacement(t *testing.T) {
 }
 
 func TestToastsPauseAndExpire(t *testing.T) {
-	for _, pause := range []string{"悬停", "焦点", "后台"} {
+	for _, pause := range []string{"悬停", "焦点"} {
 		t.Run(pause, func(t *testing.T) {
 			added, closed := false, 0
 			tt := ui.NewTester(func(c *ui.Context) {
@@ -140,8 +140,6 @@ func TestToastsPauseAndExpire(t *testing.T) {
 				tt.Move(r.X+1, r.Y+1)
 			case "焦点":
 				tt.Key(0, ui.KeyTab)
-			case "后台":
-				tt.SetFocused(false)
 			}
 			tt.Advance(10 * time.Second)
 			if !tt.HasText("暂时提示") || closed != 0 {
@@ -152,14 +150,33 @@ func TestToastsPauseAndExpire(t *testing.T) {
 				tt.Move(1, 1)
 			case "焦点":
 				tt.ClickAt(1, 1)
-			case "后台":
-				tt.SetFocused(true)
 			}
 			tt.Advance(2 * time.Second)
 			if tt.HasText("暂时提示") || closed != 1 {
 				t.Fatal("恢复计时后提示未正常超时关闭")
 			}
 		})
+	}
+}
+
+func TestToastsExpireInBackground(t *testing.T) {
+	added, closed := false, 0
+	tt := ui.NewTester(func(c *ui.Context) {
+		if !added {
+			added = true
+			c.AddToast(ui.Toast{Title: "暂时提示", Timeout: time.Second, OnClose: func() { closed++ }})
+		}
+		Toasts(c, ToastOptions{})
+	}, 480, 360)
+	tt.SetPreferences(ui.Preferences{ReduceMotion: true})
+	tt.Key(0, ui.KeyTab)
+	if !tt.Focused(locales.CloseToast()) {
+		t.Fatal("键盘未进入提示")
+	}
+	tt.SetFocused(false)
+	tt.Advance(2 * time.Second)
+	if tt.HasText("暂时提示") || closed != 1 {
+		t.Fatal("窗口进入后台后提示未正常超时关闭")
 	}
 }
 

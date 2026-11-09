@@ -20,20 +20,21 @@ func appearance(c *ui.Context, contentWidth float32, state *State) {
 		row = ui.Row(c)
 	}
 	row.Key("theme").FillWidth().MinWidth(0).Gap(t.Space(3)).Children(func() {
+		var title ui.Element
 		ui.Column(c).FillWidth().Shrink(1).MinWidth(0).Gap(t.Space(1)).Children(func() {
-			ui.Text(c, locales.Theme()).Wrap()
+			title = ui.Text(c, locales.Theme()).Wrap()
 			ui.Text(c, locales.ThemeDescription()).TextColor(t.TextMuted).FontSize(t.Rem(.875)).Wrap()
 		})
 		usableWidth := max(0, contentWidth-2*t.Space(5))
-		themeSelector(c).MinWidth(min(t.Space(32), usableWidth))
+		themeSelector(c).LabelledBy(title).MinWidth(min(t.Space(32), usableWidth))
 	})
-	settingRow(c, contentWidth, locales.InterfaceZoom(), locales.InterfaceZoomDescription(), func(c *ui.Context) {
+	settingRow(c, contentWidth, locales.InterfaceZoom(), locales.InterfaceZoomDescription(), func(c *ui.Context, title ui.Element) {
 		value := state.ZoomPercent()
 		choices := make([]choice[int], 0, len(zoomLevels))
 		for _, level := range zoomLevels {
 			choices = append(choices, choice[int]{level, strconv.Itoa(level) + "%"})
 		}
-		preferenceSelect(c, locales.InterfaceZoom(), &value, choices)
+		preferenceSelect(c, title, locales.InterfaceZoom(), &value, choices)
 		state.SetZoomPercent(value)
 	})
 }
@@ -87,8 +88,8 @@ func washSetting(c *ui.Context, contentWidth float32, dark bool, state *State) {
 			row = ui.Row(c).AlignItems(ui.Center)
 		}
 		row.FillWidth().MinWidth(0).Gap(t.Space(2)).Children(func() {
-			ui.Text(c, label).Grow(1).Wrap()
-			washSelect(c, dark, state)
+			title := ui.Text(c, label).Grow(1).Wrap()
+			washSelect(c, title, dark, state)
 		})
 		washPreview(c, contentWidth, dark, state.Wash(dark))
 	})
@@ -158,7 +159,7 @@ func styleSelectTrigger(c *ui.Context, trigger ui.Element) {
 }
 
 // washSelect 选择一种外观用的配色。
-func washSelect(c *ui.Context, dark bool, state *State) {
+func washSelect(c *ui.Context, title ui.Element, dark bool, state *State) {
 	label := locales.LightAppearance()
 	if dark {
 		label = locales.DarkAppearance()
@@ -171,7 +172,7 @@ func washSelect(c *ui.Context, dark bool, state *State) {
 	for _, id := range washIDs {
 		choices = append(choices, choice[string]{id, washLabel(id)})
 	}
-	preferenceSelect(c, label, &value, choices)
+	preferenceSelect(c, title, label, &value, choices)
 	if value != state.Wash(dark) {
 		state.SetWash(dark, value)
 		c.Invalidate()

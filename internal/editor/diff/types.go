@@ -18,6 +18,7 @@ type DiffEditor struct {
 	right *format.FormatEditor
 
 	preview      mygoeditor.DiffState
+	inputSplit   float32
 	comparing    bool
 	activeSide   int
 	requestFocus bool
@@ -49,6 +50,7 @@ func NewDiffEditor(id string, left, right string, preferences ...editor.Preferen
 		left:        format.NewFormatEditor(id, left, p),
 		right:       format.NewFormatEditor(id, right, p),
 		currentHunk: -1,
+		inputSplit:  50,
 	}
 	d.left.Label, d.right.Label = locales.LeftEditorLabel(), locales.RightEditorLabel()
 	d.left.Placeholder, d.right.Placeholder = locales.LeftEditorPlaceholder(), locales.RightEditorPlaceholder()

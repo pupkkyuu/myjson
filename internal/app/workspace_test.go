@@ -138,9 +138,8 @@ func TestWorkspaceShortcutsRespectSettingsModal(t *testing.T) {
 	} {
 		tt.Key(shortcut.mods, shortcut.key)
 	}
-	click(t, tt, locales.NewFormat())
 	if len(app.editors) != 3 || activeID(app) != "editor-1" {
-		t.Fatal("设置面板打开时应阻止侧栏及工作区快捷键")
+		t.Fatal("设置面板打开时应阻止工作区快捷键")
 	}
 	tt.Key(0, ui.KeyEscape)
 	if app.settingState.Open {
@@ -153,6 +152,18 @@ func TestWorkspaceShortcutsRespectSettingsModal(t *testing.T) {
 	tt.Key(ui.Cmd, ui.KeyComma)
 	if !app.settingState.Open {
 		t.Fatal("⌘, 应打开设置")
+	}
+	// 坐标点击模拟用户点击模态层后方的侧栏按钮；Click(label) 会拒绝被遮挡的目标。
+	r, ok := tt.Find(locales.NewFormat())
+	if !ok {
+		t.Fatal("未找到新建格式化按钮")
+	}
+	tt.ClickAt(r.X+r.W/2, r.Y+r.H/2)
+	if len(app.editors) != 3 || activeID(app) != "editor-2" {
+		t.Fatal("设置面板打开时点击侧栏位置不应触发新建")
+	}
+	if app.settingState.Open {
+		t.Fatal("点击设置面板外部应关闭设置")
 	}
 }
 

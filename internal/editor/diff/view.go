@@ -36,23 +36,20 @@ func (e *DiffEditor) View(c *ui.Context) {
 
 	view := ui.Row(c.Key("diff-editor")).Fill().MinWidth(0)
 	view.Children(func() {
-		inputs := ui.Row(c.Key("inputs")).Fill().MinWidth(0).Hidden(e.comparing)
-		inputs.Children(func() {
-			for i, pane := range panes {
-				if i > 0 {
-					ui.Box(c).Width(1).Shrink(0).FillHeight().Background(c.Theme().Border)
-				}
-				column := ui.Column(c.Key(i)).Grow(1).Basis(0).MinWidth(0).FillHeight()
-				column.Children(func() { pane.Render(c) })
+		renderPane := func(i int) func() {
+			return func() {
+				column := ui.Column(c.Key(i)).Fill().MinWidth(0)
+				column.Children(func() { panes[i].Render(c) })
 				if !e.comparing && column.FocusWithin() {
 					e.activeSide = i
 				}
 			}
-			if !e.comparing && focus {
-				panes[focusSide].Focus()
-				e.activeSide = focusSide
-			}
-		})
+		}
+		e.inputSplitView(c.Key("inputs"), renderPane(0), renderPane(1)).Hidden(e.comparing)
+		if !e.comparing && focus {
+			panes[focusSide].Focus()
+			e.activeSide = focusSide
+		}
 		if e.comparing {
 			e.preview.Theme = editor.Theme(c.Theme())
 			e.preview.Wrap = e.WrapEnabled()

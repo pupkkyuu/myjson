@@ -9,6 +9,16 @@ import (
 	"myjson/internal/locales"
 )
 
+func clickPreferenceControl(t *testing.T, tt *ui.Tester, role ui.Role, label string) {
+	t.Helper()
+	control, ok := tt.AccessByRole(role, label)
+	if !ok {
+		t.Fatalf("未找到设置控件 %q", label)
+	}
+	r := control.Bounds
+	tt.ClickAt(r.X+r.W/2, r.Y+r.H/2)
+}
+
 func TestSettingsApplyToOpenAndNewDocuments(t *testing.T) {
 	app := newApplication()
 	tt := mountWorkspace(app)
@@ -20,9 +30,9 @@ func TestSettingsApplyToOpenAndNewDocuments(t *testing.T) {
 	first.ToggleWrap()
 	tt.Key(ui.Cmd, ui.KeyComma)
 	click(t, tt, locales.EditorSettings())
-	click(t, tt, locales.SettingControl(locales.EditorFontSize()))
+	clickPreferenceControl(t, tt, ui.RoleSlider, locales.EditorFontSize())
 	tt.Key(0, ui.KeyEnd)
-	click(t, tt, locales.SettingControl(locales.EditorIndentWidth()))
+	clickPreferenceControl(t, tt, ui.RolePopUpButton, locales.EditorIndentWidth())
 	click(t, tt, "4")
 	for _, e := range []*format.FormatEditor{first, second} {
 		if e.Font.Size != 28 || e.TabSize != 4 {
@@ -32,7 +42,7 @@ func TestSettingsApplyToOpenAndNewDocuments(t *testing.T) {
 	if first.Buffer.String() != "{}" || !first.WrapEnabled() || second.WrapEnabled() {
 		t.Fatal("修改设置改变了文档内容或各自的换行状态")
 	}
-	click(t, tt, locales.SettingControl(locales.EditorDefaultWrap()))
+	clickPreferenceControl(t, tt, ui.RoleSwitch, locales.EditorDefaultWrap())
 	tt.Key(0, ui.KeyEscape)
 	tt.Key(ui.Cmd, ui.KeyT)
 	created := app.active.(*format.FormatEditor)
