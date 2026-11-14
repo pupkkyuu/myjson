@@ -140,6 +140,10 @@
   "@menuFile": { "description": "文件菜单。" },
   "menuView": "视图",
   "@menuView": { "description": "视图菜单。" },
+  "previousTab": "上一个标签",
+  "@previousTab": { "description": "切换到上一个标签页的窗口菜单命令。" },
+  "nextTab": "下一个标签",
+  "@nextTab": { "description": "切换到下一个标签页的窗口菜单命令。" },
   "zoomIn": "放大界面",
   "@zoomIn": { "description": "放大整个界面。" },
   "zoomOut": "缩小界面",
@@ -515,10 +519,6 @@
   "applicationVersion": "版本号",
   "@applicationVersion": {
     "description": "关于页面的版本号文案。"
-  },
-  "applicationAuthor": "作者",
-  "@applicationAuthor": {
-    "description": "关于页面的作者文案。"
   },
   "transforming": "正在处理",
   "@transforming": {

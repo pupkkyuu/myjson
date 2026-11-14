@@ -1,0 +1,45 @@
+target: mygo
+package: icons
+directory: pkg/icons
+
+sources:
+  - server: iconify
+    lib: lucide
+    icons:
+      - arrow-down
+      - arrow-down-a-z
+      - arrow-up
+      - braces
+      - brackets
+      - check
+      - chevrons-down-up
+      - chevrons-up-down
+      - circle-check
+      - circle-x
+      - code
+      - copy
+      - database
+      - file-code
+      - file-diff
+      - file-text
+      - folder
+      - git-branch
+      - hash
+      - inbox
+      - info
+      - layers
+      - minimize-2
+      - minus
+      - palette
+      - panel-left
+      - pencil
+      - plus
+      - search
+      - settings
+      - shield-check
+      - square
+      - square-code
+      - text-wrap
+      - trash
+      - triangle-exclamation-point
+      - x

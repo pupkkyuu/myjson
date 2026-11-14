@@ -88,19 +88,29 @@ func FuzzJSONTransforms(f *testing.F) {
 }
 
 func FuzzDiagnosticRanges(f *testing.F) {
-	for _, seed := range []string{"", "{}", "{\"a\":中}", "{\"a\":\"中\n文\"}", "\xff", " \n", "{"} {
+	for _, seed := range []string{"", "{}", "{\"a\":中}", "{\"a\":\"中\n文\"}", "\xff", " \n", "{", "{} []", "true false", `{"a":1,"\u0061":2}`, `"\ud800"`} {
 		f.Add(seed)
 	}
 	f.Fuzz(func(t *testing.T, source string) {
 		if len(source) > 64*1024 {
 			t.Skip()
 		}
-		for _, d := range json.Validate(source) {
+		diagnostics := json.ValidateBytes([]byte(source))
+		valid := json.IsBlank(source) || jsontext.Value(source).IsValid()
+		if (len(diagnostics) == 0) != valid || !reflect.DeepEqual(diagnostics, json.Validate(source)) {
+			t.Fatalf("字节和字符串校验应保持严格 JSON 语义：%q，诊断 %+v", source, diagnostics)
+		}
+		for _, d := range diagnostics {
 			if d.Start < 0 || d.End < d.Start || d.End > len(source) || d.Line < 1 || d.Column < 1 || d.Detail == "" {
 				t.Fatalf("越界或不完整的诊断：%+v，输入 %q", d, source)
 			}
 			if utf8.ValidString(source) && !utf8.ValidString(source[d.Start:d.End]) {
 				t.Fatalf("诊断截断 UTF-8 字符：%+v，输入 %q", d, source)
+			}
+			_, err := json.Format(source)
+			want := json.DiagnosticsForError(source, err)[0]
+			if d.Start != want.Start || d.End != want.End || d.Line != want.Line || d.Column != want.Column {
+				t.Fatalf("校验与变换的错误位置不一致：%q，诊断 %+v，期望 %+v", source, d, want)
 			}
 		}
 	})

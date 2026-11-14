@@ -67,15 +67,6 @@ var washes = []wash{
 // Default is the palette used when none has been selected.
 const Default = "paper"
 
-func washByID(id string) wash {
-	for _, w := range washes {
-		if w.id == id {
-			return w
-		}
-	}
-	return washByID(Default)
-}
-
 // IDs returns the available palettes in display order.
 func IDs() []string {
 	ids := make([]string, len(washes))
@@ -86,6 +77,7 @@ func IDs() []string {
 }
 
 // Look contains the window gradients and UI colors for a palette and appearance.
+// Theme and gradient Stops are shared and must not be modified; copy them first.
 type Look struct {
 	Base, Glow ui.LinearGradient
 	Theme      *ui.Theme
@@ -93,9 +85,32 @@ type Look struct {
 	Sidebar    ui.Color
 }
 
+type lookKey struct {
+	id   string
+	dark bool
+}
+
+// The palette definitions are static, so build both appearances once.
+var looks = func() map[lookKey]Look {
+	all := make(map[lookKey]Look, 2*len(washes))
+	for _, w := range washes {
+		for _, dark := range []bool{false, true} {
+			all[lookKey{w.id, dark}] = buildLook(w, dark)
+		}
+	}
+	return all
+}()
+
 // LookFor resolves a palette for the requested appearance, falling back to Default.
+// The returned Theme and gradient Stops are read-only shared data.
 func LookFor(id string, dark bool) Look {
-	w := washByID(id)
+	if l, ok := looks[lookKey{id, dark}]; ok {
+		return l
+	}
+	return looks[lookKey{Default, dark}]
+}
+
+func buildLook(w wash, dark bool) Look {
 	hexes, glow := w.light, w.lightGlow
 	if dark {
 		hexes, glow = w.dark, w.darkGlow
@@ -131,44 +146,30 @@ func plainTheme(dark bool) *ui.Theme {
 		accent := ui.Hex("#6b93ff")
 		t.Background = ui.Hex("#141418")
 		t.Surface = ui.Hex("#232328")
-		t.SurfaceHover = ui.RGBA(255, 255, 255, 0.05)
-		t.SurfacePressed = ui.RGBA(255, 255, 255, 0.10)
-		t.Border = ui.RGBA(255, 255, 255, 0.08)
 		t.Text = ui.Hex("#ececf0")
 		t.TextMuted = ui.Hex("#a9a9b4")
 		t.Accent = accent
-		t.AccentHover = accent.Mix(ui.RGB(255, 255, 255), 0.12)
-		t.AccentPressed = accent.Mix(ui.RGB(0, 0, 0), 0.12)
 		t.AccentText = ui.Hex("#161618")
 		t.Danger = ui.Hex("#ff6961")
 		t.Warning = ui.Hex("#f0a33a")
 		t.Success = ui.Hex("#4fd17a")
 		t.Selection = ui.Hex("#2f4170")
-		t.Focus = accent.Alpha(0.8)
-		t.Scrollbar = t.Text.Alpha(.35)
-		t.Radius = 8
+		applyControlColors(t, dark)
 		return t
 	}
 	t := ui.LightTheme()
 	accent := ui.Hex("#3b6cf6")
 	t.Background = ui.Hex("#eceef4")
 	t.Surface = ui.Hex("#ffffff")
-	t.SurfaceHover = ui.RGBA(0, 0, 0, 0.04)
-	t.SurfacePressed = ui.RGBA(0, 0, 0, 0.08)
-	t.Border = ui.RGBA(0, 0, 0, 0.07)
 	t.Text = ui.Hex("#1d1d1f")
 	t.TextMuted = ui.Hex("#6e6e78")
 	t.Accent = accent
-	t.AccentHover = accent.Mix(ui.RGB(0, 0, 0), 0.12)
-	t.AccentPressed = accent.Mix(ui.RGB(0, 0, 0), 0.25)
 	t.AccentText = ui.Hex("#ffffff")
 	t.Danger = ui.Hex("#d93a35")
 	t.Warning = ui.Hex("#c27b0f")
 	t.Success = ui.Hex("#22863a")
 	t.Selection = ui.Hex("#cfdcfb")
-	t.Focus = ui.RGBA(59, 108, 246, 0.55)
-	t.Scrollbar = t.Text.Alpha(.30)
-	t.Radius = 8
+	applyControlColors(t, dark)
 	return t
 }
 
@@ -181,19 +182,12 @@ func tintedTheme(tn tone, dark bool) *ui.Theme {
 		bg, fg := tint(0.255, 0.02), tint(0.92, 0.015)
 		accent := ui.Oklch(0.74, 0.13, tn.accent)
 		t.Background, t.Surface = bg, bg
-		t.SurfaceHover = ui.RGBA(255, 255, 255, 0.05)
-		t.SurfacePressed = ui.RGBA(255, 255, 255, 0.10)
-		t.Border = ui.RGBA(255, 255, 255, 0.08)
 		t.Text, t.TextMuted = fg, fg.Mix(bg, 0.38)
 		t.Accent = accent
-		t.AccentHover = accent.Mix(ui.RGB(255, 255, 255), 0.12)
-		t.AccentPressed = accent.Mix(ui.RGB(0, 0, 0), 0.12)
 		t.AccentText = bg
 		t.Danger, t.Warning, t.Success = toneStatus(tn, true)
 		t.Selection = ui.Oklch(0.38, 0.06, tn.accent)
-		t.Focus = accent.Alpha(0.8)
-		t.Scrollbar = t.Text.Alpha(.35)
-		t.Radius = 8
+		applyControlColors(t, dark)
 		return t
 	}
 	t := ui.LightTheme()
@@ -202,20 +196,35 @@ func tintedTheme(tn tone, dark bool) *ui.Theme {
 	bg, fg := tint(paper, 0.012), tint(0.28, 0.03)
 	accent := ui.Oklch(0.55, 0.13, tn.accent)
 	t.Background, t.Surface = bg, bg
-	t.SurfaceHover = ui.RGBA(0, 0, 0, 0.04)
-	t.SurfacePressed = ui.RGBA(0, 0, 0, 0.08)
-	t.Border = ui.RGBA(0, 0, 0, 0.07)
 	t.Text, t.TextMuted = fg, fg.Mix(bg, 0.38)
 	t.Accent = accent
-	t.AccentHover = accent.Mix(ui.RGB(0, 0, 0), 0.12)
-	t.AccentPressed = accent.Mix(ui.RGB(0, 0, 0), 0.25)
 	t.AccentText = ui.Hex("#ffffff")
 	t.Danger, t.Warning, t.Success = toneStatus(tn, false)
 	t.Selection = ui.Oklch(0.9, 0.045, tn.accent)
-	t.Focus = accent.Alpha(0.55)
-	t.Scrollbar = t.Text.Alpha(.30)
-	t.Radius = 8
+	applyControlColors(t, dark)
 	return t
+}
+
+// applyControlColors 按明暗外观设置控件状态，使用主题已确定的文字色和强调色。
+func applyControlColors(t *ui.Theme, dark bool) {
+	if dark {
+		t.SurfaceHover = ui.RGBA(255, 255, 255, 0.05)
+		t.SurfacePressed = ui.RGBA(255, 255, 255, 0.10)
+		t.Border = ui.RGBA(255, 255, 255, 0.08)
+		t.AccentHover = t.Accent.Mix(ui.RGB(255, 255, 255), 0.12)
+		t.AccentPressed = t.Accent.Mix(ui.RGB(0, 0, 0), 0.12)
+		t.Focus = t.Accent.Alpha(0.8)
+		t.Scrollbar = t.Text.Alpha(.35)
+	} else {
+		t.SurfaceHover = ui.RGBA(0, 0, 0, 0.04)
+		t.SurfacePressed = ui.RGBA(0, 0, 0, 0.08)
+		t.Border = ui.RGBA(0, 0, 0, 0.07)
+		t.AccentHover = t.Accent.Mix(ui.RGB(0, 0, 0), 0.12)
+		t.AccentPressed = t.Accent.Mix(ui.RGB(0, 0, 0), 0.25)
+		t.Focus = t.Accent.Alpha(0.55)
+		t.Scrollbar = t.Text.Alpha(.30)
+	}
+	t.Radius = 8
 }
 
 // toneStatus 是红、黄、绿三种状态色，按主题色相偏一点，离得远的偏得少，避免搅成浑色。

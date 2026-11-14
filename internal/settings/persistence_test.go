@@ -1,12 +1,19 @@
 package settings
 
 import (
+	"encoding/json/jsontext"
+	"encoding/json/v2"
+	"maps"
 	"os"
 	"path/filepath"
+	"slices"
+	"strings"
 	"testing"
 
 	"github.com/egoist/mygo"
 	mygoeditor "github.com/egoist/mygo/ui/editor"
+
+	"myjson/internal/palette"
 )
 
 func TestSettingsPersistenceRoundTrip(t *testing.T) {
@@ -36,6 +43,91 @@ func TestSettingsPersistenceRoundTrip(t *testing.T) {
 	got, err = Load(path)
 	if err != nil || got != want {
 		t.Fatalf("replacement got %+v, %v", got, err)
+	}
+}
+
+func TestSavedSettingsUseGoFieldNames(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "settings.json")
+	if err := Save(path, DefaultSaved()); err != nil {
+		t.Fatal(err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var root map[string]jsontext.Value
+	if err := json.Unmarshal(data, &root); err != nil {
+		t.Fatal(err)
+	}
+	if got, want := slices.Sorted(maps.Keys(root)), []string{"DarkWash", "LightWash", "Preferences", "Theme", "Zoom"}; !slices.Equal(got, want) {
+		t.Fatalf("配置顶层字段 = %v，期望 %v", got, want)
+	}
+	var preferences map[string]jsontext.Value
+	if err := json.Unmarshal(root["Preferences"], &preferences); err != nil {
+		t.Fatal(err)
+	}
+	if got, want := slices.Sorted(maps.Keys(preferences)), []string{"ActiveLine", "AutoClose", "DefaultWrap", "DiffInline", "DiffLayout", "FontSize", "IndentGuides", "LineHeight", "TabSize", "Whitespace"}; !slices.Equal(got, want) {
+		t.Fatalf("编辑器偏好字段 = %v，期望 %v", got, want)
+	}
+}
+
+func TestLoadSettingsAcceptsLegacyAndGoNames(t *testing.T) {
+	contents := `{
+		"Preferences": {
+			"FontSize": 22, "LineHeight": 1.8, "TabSize": 8,
+			"DefaultWrap": true, "Whitespace": 2, "IndentGuides": false,
+			"ActiveLine": true, "AutoClose": false, "DiffLayout": 1, "DiffInline": 1
+		},
+		"Zoom": 150, "Theme": "dark", "LightWash": "rex", "DarkWash": "tide"
+	}`
+	want := DefaultSaved()
+	want.Preferences.FontSize = 22
+	want.Preferences.LineHeight = 1.8
+	want.Preferences.TabSize = 8
+	want.Preferences.DefaultWrap = true
+	want.Preferences.Whitespace = mygoeditor.WhitespaceAll
+	want.Preferences.IndentGuides = false
+	want.Preferences.ActiveLine = true
+	want.Preferences.AutoClose = false
+	want.Preferences.DiffLayout = mygoeditor.DiffUnified
+	want.Preferences.DiffInline = mygoeditor.DiffInlineWord
+	want.Zoom, want.Theme = 150, mygo.ThemeDark
+	want.LightWash, want.DarkWash = "rex", "tide"
+	legacy := strings.NewReplacer(
+		`"Preferences"`, `"preferences"`, `"Zoom"`, `"zoom"`, `"Theme"`, `"theme"`,
+		`"LightWash"`, `"lightWash"`, `"DarkWash"`, `"darkWash"`,
+	).Replace(contents)
+	camelCase := strings.NewReplacer(
+		`"FontSize"`, `"fontSize"`, `"LineHeight"`, `"lineHeight"`, `"TabSize"`, `"tabSize"`,
+		`"DefaultWrap"`, `"defaultWrap"`, `"Whitespace"`, `"whitespace"`, `"IndentGuides"`, `"indentGuides"`,
+		`"ActiveLine"`, `"activeLine"`, `"AutoClose"`, `"autoClose"`, `"DiffLayout"`, `"diffLayout"`, `"DiffInline"`, `"diffInline"`,
+	).Replace(legacy)
+	for _, tc := range []struct{ name, contents string }{
+		{"Go字段名", contents}, {"旧混合命名", legacy}, {"小驼峰", camelCase},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), "settings.json")
+			if err := os.WriteFile(path, []byte(tc.contents), 0600); err != nil {
+				t.Fatal(err)
+			}
+			got, err := Load(path)
+			if err != nil || got != want {
+				t.Fatalf("读取配置 = %+v，错误 %v；期望 %+v", got, err, want)
+			}
+			if err := Save(path, got); err != nil {
+				t.Fatal(err)
+			}
+			data, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if strings.Contains(string(data), `"preferences"`) || strings.Contains(string(data), `"fontSize"`) || strings.Contains(string(data), `"lightWash"`) {
+				t.Fatalf("重新保存后仍含旧字段名：%s", data)
+			}
+			if reloaded, err := Load(path); err != nil || reloaded != want {
+				t.Fatalf("统一字段名后设置丢失：%+v，%v", reloaded, err)
+			}
+		})
 	}
 }
 
@@ -76,7 +168,7 @@ func TestInvalidSettingsAndPartialDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Preferences.FontSize != 13 || got.Preferences.TabSize != 4 || !got.Preferences.AutoClose || got.Zoom != 100 || got.Theme != mygo.ThemeSystem || got.LightWash != defaultWash || got.DarkWash != defaultWash {
+	if got.Preferences.FontSize != 13 || got.Preferences.TabSize != 4 || !got.Preferences.AutoClose || got.Zoom != 100 || got.Theme != mygo.ThemeSystem || got.LightWash != palette.Default || got.DarkWash != palette.Default {
 		t.Fatalf("invalid or missing values: %+v", got)
 	}
 	if err := os.WriteFile(path, []byte(`{`), 0600); err != nil {
@@ -88,12 +180,22 @@ func TestInvalidSettingsAndPartialDefaults(t *testing.T) {
 }
 
 func TestLoadRejectsDuplicateSettings(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "settings.json")
-	if err := os.WriteFile(path, []byte(`{"zoom":100,"zoom":125}`), 0600); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := Load(path); err == nil {
-		t.Fatal("duplicate settings should be rejected")
+	for _, contents := range []string{
+		`{"zoom":100,"zoom":125}`,
+		`{"zoom":100,"Zoom":125}`,
+		`{"preferences":{},"Preferences":{}}`,
+		`{"Preferences":{"FontSize":18,"fontSize":22}}`,
+		`{"lightWash":"rex","LightWash":"tide"}`,
+	} {
+		t.Run(contents, func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), "settings.json")
+			if err := os.WriteFile(path, []byte(contents), 0600); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := Load(path); err == nil {
+				t.Fatal("duplicate settings should be rejected")
+			}
+		})
 	}
 }
 

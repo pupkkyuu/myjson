@@ -4,9 +4,9 @@ import (
 	"strconv"
 
 	"github.com/egoist/mygo"
-	"github.com/egoist/mygo/plugins/glass"
 	"github.com/egoist/mygo/ui"
 
+	"myjson/internal/component"
 	"myjson/internal/locales"
 	"myjson/internal/palette"
 )
@@ -30,9 +30,9 @@ func appearance(c *ui.Context, contentWidth float32, state *State) {
 	})
 	settingRow(c, contentWidth, locales.InterfaceZoom(), locales.InterfaceZoomDescription(), func(c *ui.Context, title ui.Element) {
 		value := state.ZoomPercent()
-		choices := make([]choice[int], 0, len(zoomLevels))
+		choices := make([]component.Choice[int], 0, len(zoomLevels))
 		for _, level := range zoomLevels {
-			choices = append(choices, choice[int]{level, strconv.Itoa(level) + "%"})
+			choices = append(choices, component.Choice[int]{Value: level, Label: strconv.Itoa(level) + "%"})
 		}
 		preferenceSelect(c, title, locales.InterfaceZoom(), &value, choices)
 		state.SetZoomPercent(value)
@@ -100,62 +100,17 @@ func themeSelector(c *ui.Context) ui.Element {
 }
 
 func renderThemeSelector(c *ui.Context, choice mygo.ThemeSource, apply func(*ui.Context, mygo.ThemeSource)) ui.Element {
-	t := c.Theme()
-	selectBox := ui.SelectBase(c.Key("theme-selector"), &choice)
-	styleSelectTrigger(c, selectBox.Trigger)
-
-	selectBox.Trigger.
-		Label(locales.ThemeSelector()).
-		MinWidth(c.Theme().Space(32)).
-		MaxWidthPercent(100).
-		Children(func() {
-			ui.Text(c, themeChoiceLabel(choice)).SingleLine()
-		})
-
-	selectBox.Popup(func(panel ui.Element) {
-		panel.Padding(t.Space(1)).Radius(t.Radius*1.5).
-			Material(glass.Glass{Tint: t.Background.Alpha(.92)}).Border(1, t.Border).
-			Shadow(0, t.Space(1), t.Space(4), 0, ui.RGBA(0, 0, 0, .14))
-		for _, value := range []mygo.ThemeSource{mygo.ThemeSystem, mygo.ThemeLight, mygo.ThemeDark} {
-			label := themeChoiceLabel(value)
-			item := selectBox.Item(value).Label(label).Padding(t.Space(1.5), t.Space(2.5)).Radius(t.Radius).
-				Background(ui.Transparent).TextColor(t.Text)
-			if value == choice {
-				item.Background(t.Text.Alpha(.1))
-			} else if item.Hovered() || item.Highlighted() {
-				item.Background(t.Text.Alpha(.04))
-			}
-			item.Children(func() { ui.Text(c, label) })
-		}
-	})
-
-	if selectBox.Trigger.Changed() {
+	choices := []component.Choice[mygo.ThemeSource]{
+		{Value: mygo.ThemeSystem, Label: themeChoiceLabel(mygo.ThemeSystem)},
+		{Value: mygo.ThemeLight, Label: themeChoiceLabel(mygo.ThemeLight)},
+		{Value: mygo.ThemeDark, Label: themeChoiceLabel(mygo.ThemeDark)},
+	}
+	trigger := component.Select(c.Key("theme-selector"), &choice, choices, themeChoiceLabel(choice))
+	trigger.Label(locales.ThemeSelector()).MinWidth(c.Theme().Space(32)).MaxWidthPercent(100)
+	if trigger.Changed() {
 		apply(c, choice)
 	}
-	return selectBox.Trigger
-}
-
-func styleSelectTrigger(c *ui.Context, trigger ui.Element) {
-	t := c.Theme()
-	trigger.Padding(t.Space(1.5), t.Space(6), t.Space(1.5), t.Space(2.5)).Radius(t.Radius).Justify(ui.Start)
-	bg := t.Surface
-	if !trigger.IsDisabled() {
-		switch {
-		case trigger.Pressed():
-			bg = t.SurfacePressed
-		case trigger.Hovered():
-			bg = t.SurfaceHover
-		}
-	} else {
-		trigger.Opacity(.45)
-	}
-	trigger.Background(bg).TextColor(t.Text).Border(1, t.Border).DrawOver(func(p *ui.Painter, r ui.Rect) {
-		s := t.Space(2)
-		cx, cy := r.X+r.W-t.Space(3), r.Y+r.H/2
-		var path ui.Path
-		path.MoveTo(cx-s*.35, cy-s*.15).LineTo(cx, cy+s*.2).LineTo(cx+s*.35, cy-s*.15)
-		p.StrokePath(&path, 1.5, t.TextMuted)
-	})
+	return trigger
 }
 
 // washSelect 选择一种外观用的配色。
@@ -166,11 +121,12 @@ func washSelect(c *ui.Context, title ui.Element, dark bool, state *State) {
 	}
 	value := state.Wash(dark)
 	if value == "" {
-		value = defaultWash
+		value = palette.Default
 	}
-	choices := make([]choice[string], 0, len(washIDs))
-	for _, id := range washIDs {
-		choices = append(choices, choice[string]{id, washLabel(id)})
+	ids := palette.IDs()
+	choices := make([]component.Choice[string], 0, len(ids))
+	for _, id := range ids {
+		choices = append(choices, component.Choice[string]{Value: id, Label: washLabel(id)})
 	}
 	preferenceSelect(c, title, label, &value, choices)
 	if value != state.Wash(dark) {

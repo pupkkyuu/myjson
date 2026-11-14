@@ -5,7 +5,7 @@ import (
 
 	"myjson/internal/component"
 	"myjson/internal/locales"
-	"myjson/pkg/icons"
+	"myjson/pkg/icons/lucide"
 )
 
 // View 渲染导航并返回本帧触发的操作。

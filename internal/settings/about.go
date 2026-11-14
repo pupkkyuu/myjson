@@ -7,21 +7,12 @@ import (
 	"myjson/internal/locales"
 )
 
-const (
-	applicationVersion    = "0.2.1"
-	applicationAuthor     = "pupkkyuu"
-	applicationRepository = "https://github.com/pupkkyuu/myjson"
-)
+const applicationRepository = "https://github.com/pupkkyuu/myjson"
 
 func about(c *ui.Context) {
 	t := c.Theme()
-	version := mygo.App.Version()
-	if version == "" {
-		version = applicationVersion
-	}
 	for _, item := range []struct{ label, value string }{
-		{locales.ApplicationVersion(), version},
-		{locales.ApplicationAuthor(), applicationAuthor},
+		{locales.ApplicationVersion(), mygo.App.Version()},
 		{locales.ApplicationRepository(), applicationRepository},
 	} {
 		ui.Column(c.Key(item.label)).FillWidth().MinWidth(0).Gap(t.Space(1)).Children(func() {

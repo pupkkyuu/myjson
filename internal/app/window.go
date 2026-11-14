@@ -17,12 +17,10 @@ func (app *Application) openWindow() {
 	}
 	app.window = mygo.NewWindow(app.windowOptions(runtime.GOOS))
 	app.createFormatEditor(app.window.Invalidate)
-	removeTabShortcuts := app.installWindowTabShortcuts()
 	app.window.Invalidate()
 	app.window.OnMaximize(app.window.Invalidate)
 	app.window.OnUnmaximize(app.window.Invalidate)
 	app.window.OnClosed(func() {
-		removeTabShortcuts()
 		app.flushSettings()
 		app.window = nil
 		app.editors = nil

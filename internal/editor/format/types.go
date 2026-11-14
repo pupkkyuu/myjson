@@ -31,9 +31,8 @@ type FormatEditor struct {
 }
 
 type transformResult struct {
-	version uint64
-	text    string
-	err     error
+	PreparedTransform
+	err error
 }
 
 type diagnosticsResult struct {

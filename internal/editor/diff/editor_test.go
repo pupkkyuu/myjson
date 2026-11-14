@@ -130,7 +130,7 @@ func TestPairedTransformsCommitAndUndo(t *testing.T) {
 		{"去转义", `"{}"`, `"[]"`, "{}", "[]", (*DiffEditor).Unescape},
 		{"字段排序", `{"z":1,"a":2}`, `{"d":3,"b":4}`, "{\n  \"a\": 2,\n  \"z\": 1\n}", "{\n  \"b\": 4,\n  \"d\": 3\n}", (*DiffEditor).SortFields},
 		{"跳过空侧", " \n", `{"a":1}`, " \n", "{\n  \"a\": 1\n}", (*DiffEditor).Format},
-		{"跳过空白转义", "", " \t", "", " \t", (*DiffEditor).Escape},
+		{"转义空白", "", " \t", `""`, `" \t"`, (*DiffEditor).Escape},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			e := NewDiffEditor("editor-1", tc.left, tc.right)
@@ -186,6 +186,32 @@ func TestPairedFailurePreservesBothDocuments(t *testing.T) {
 			message = []func(string) string{locales.DiffLeftError, locales.DiffRightError}[badSide](message)
 			if !tt.HasText(message) {
 				t.Fatalf("错误提示缺少出错侧：%q", message)
+			}
+		})
+	}
+}
+
+func TestPairedEOFErrorToastMatchesDiagnostic(t *testing.T) {
+	for _, badSide := range []int{0, 1} {
+		t.Run([]string{"左侧 EOF", "右侧 EOF"}[badSide], func(t *testing.T) {
+			sources := [2]string{"{}", "{}"}
+			sources[badSide] = "{\n  \"a\": 1\n"
+			e := NewDiffEditor("editor-1", sources[0], sources[1])
+			tt, wake := mountDiff(e)
+			e.Format()
+			awaitDiff(t, wake)
+			tt.Frame()
+			panes := [2]*format.FormatEditor{e.left, e.right}
+			diagnostics := panes[badSide].Diagnostics()
+			if len(diagnostics) != 1 {
+				t.Fatalf("出错侧应有一处红线，得到 %+v", diagnostics)
+			}
+			d := diagnostics[0]
+			want := json.Validate(sources[badSide])[0]
+			message := locales.JsonErrorLocation(2, 8, want.Detail)
+			toast := []func(string) string{locales.DiffLeftError, locales.DiffRightError}[badSide](message)
+			if d.Start != 9 || d.End != 10 || d.Message != message || !tt.HasText(toast) {
+				t.Fatalf("EOF 的 Toast 和红线应定位到第 2 行第 8 列：诊断 %+v，界面文本 %q", d, tt.Texts())
 			}
 		})
 	}
@@ -486,12 +512,8 @@ func TestUnescapeNormalizesLineEndingsBeforeDiagnostics(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			e := NewDiffEditor("editor-1", source, source)
-			tt, wake := mountDiff(e)
-			e.Unescape()
-			awaitDiff(t, wake)
-			tt.Frame()
-			for side, pane := range []*format.FormatEditor{e.left, e.right} {
+			single, paired := transformBothEditors(t, source, source, (*format.FormatEditor).Unescape, (*DiffEditor).Unescape)
+			for side, pane := range []*format.FormatEditor{single, paired.left, paired.right} {
 				if got := pane.Buffer.String(); got != tc.want {
 					t.Fatalf("第 %d 侧去转义结果 = %q，期望 %q", side, got, tc.want)
 				}

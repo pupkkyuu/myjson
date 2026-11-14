@@ -5,7 +5,7 @@ import (
 
 	"myjson/internal/component"
 	"myjson/internal/locales"
-	"myjson/pkg/icons"
+	"myjson/pkg/icons/lucide"
 )
 
 func View(c *ui.Context, state *State, inset float32) {

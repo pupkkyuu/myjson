@@ -24,6 +24,33 @@ func TestThemeChoiceLabels(t *testing.T) {
 	}
 }
 
+func TestThemeSelectorUnknownSourceShowsSystemWithoutApplying(t *testing.T) {
+	choice := mygo.ThemeSource("未知")
+	var applied []mygo.ThemeSource
+	tt := ui.NewTester(func(c *ui.Context) {
+		renderThemeSelector(c, choice, func(c *ui.Context, source mygo.ThemeSource) {
+			choice = source
+			applied = append(applied, source)
+			c.Invalidate()
+		})
+	}, 500, 400)
+	if !tt.HasText(locales.SystemTheme()) {
+		t.Fatal("未知主题来源应显示跟随系统")
+	}
+	if len(applied) != 0 || choice != mygo.ThemeSource("未知") {
+		t.Fatal("渲染未知主题来源不应应用或修改主题")
+	}
+	if err := tt.Click(locales.ThemeSelector()); err != nil {
+		t.Fatal(err)
+	}
+	if err := tt.Click(locales.DarkTheme()); err != nil {
+		t.Fatal(err)
+	}
+	if choice != mygo.ThemeDark || len(applied) != 1 || applied[0] != mygo.ThemeDark {
+		t.Fatalf("从未知来源选择深色主题后，来源 = %q，应用记录 = %v", choice, applied)
+	}
+}
+
 func TestSettingsDialogCanCloseAtDifferentSizes(t *testing.T) {
 	for _, tc := range []struct {
 		width   int

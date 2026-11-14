@@ -22,17 +22,28 @@ func (app *Application) applicationMenu() *mygo.Menu {
 	if runtime.GOOS != "darwin" {
 		fileItems = append(fileItems, &mygo.MenuItem{Role: mygo.RoleQuit})
 	}
-	windowMenu := &mygo.MenuItem{Role: mygo.RoleWindowMenu}
-	if runtime.GOOS != "darwin" {
-		windowMenu.Submenu = []*mygo.MenuItem{
-			{Role: mygo.RoleMinimize},
-			{Label: locales.CloseWindow(), Click: func(_ *mygo.MenuItem, win *mygo.Window) {
-				if win != nil {
-					win.Close()
-				}
-			}},
-		}
+	windowItems := []*mygo.MenuItem{{Role: mygo.RoleMinimize}}
+	previousTabAccelerator := "Ctrl+Shift+Tab"
+	if runtime.GOOS == "darwin" {
+		// AppKit distinguishes Shift+Tab using NSBackTabCharacter.
+		previousTabAccelerator = "Ctrl+Shift+\x19"
+		windowItems = append(windowItems, &mygo.MenuItem{Role: mygo.RoleZoom})
+	} else {
+		windowItems = append(windowItems, &mygo.MenuItem{Label: locales.CloseWindow(), Click: func(_ *mygo.MenuItem, win *mygo.Window) {
+			if win != nil {
+				win.Close()
+			}
+		}})
 	}
+	windowItems = append(windowItems,
+		mygo.Separator(),
+		&mygo.MenuItem{ID: "previous-tab", Label: locales.PreviousTab(), Accelerator: previousTabAccelerator, Click: func(_ *mygo.MenuItem, win *mygo.Window) { app.menuCycleEditor(win, -1) }},
+		&mygo.MenuItem{ID: "next-tab", Label: locales.NextTab(), Accelerator: "Ctrl+Tab", Click: func(_ *mygo.MenuItem, win *mygo.Window) { app.menuCycleEditor(win, 1) }},
+	)
+	if runtime.GOOS == "darwin" {
+		windowItems = append(windowItems, mygo.Separator(), &mygo.MenuItem{Role: mygo.RoleFront})
+	}
+	windowMenu := &mygo.MenuItem{Role: mygo.RoleWindowMenu, Submenu: windowItems}
 	items = append(items, []*mygo.MenuItem{
 		{Label: locales.MenuFile(), Submenu: fileItems},
 		{Role: mygo.RoleEditMenu},
@@ -56,8 +67,17 @@ func (app *Application) applicationMenu() *mygo.Menu {
 }
 
 func (app *Application) menuClose(win *mygo.Window) {
+	if app.settingState.Open {
+		app.settingState.Open = false
+		app.syncMenu()
+		if app.window != nil {
+			app.window.Invalidate()
+		}
+		return
+	}
 	if len(app.editors) > 1 && app.active != nil {
 		app.closeEditor(app.active.ID())
+		app.syncMenu()
 		if app.window != nil {
 			app.window.Invalidate()
 		}
@@ -68,6 +88,16 @@ func (app *Application) menuClose(win *mygo.Window) {
 	}
 	if win != nil {
 		win.Close()
+	}
+}
+
+func (app *Application) menuCycleEditor(win *mygo.Window, direction int) {
+	if app.settingState.Open || win != nil && win != app.window {
+		return
+	}
+	app.cycleEditor(direction)
+	if app.window != nil {
+		app.window.Invalidate()
 	}
 }
 
@@ -85,6 +115,7 @@ func (app *Application) menuNewEditor(comparison bool) {
 	} else if !newWindow {
 		app.createFormatEditor(app.window.Invalidate)
 	}
+	app.syncMenu()
 	app.window.Invalidate()
 }
 
@@ -106,14 +137,29 @@ func (app *Application) syncMenu() {
 	if app.menu == nil {
 		return
 	}
-	for _, id := range []string{"new-format", "new-comparison", "toggle-sidebar"} {
+	for _, id := range []string{"new-format", "new-comparison", "toggle-sidebar", "previous-tab", "next-tab"} {
 		item := app.menu.ItemByID(id)
 		if item == nil {
 			continue
 		}
-		enabled := !app.settingState.Open && (id != "toggle-sidebar" || app.window != nil)
+		enabled := !app.settingState.Open
+		switch id {
+		case "toggle-sidebar":
+			enabled = enabled && app.window != nil
+		case "previous-tab", "next-tab":
+			enabled = enabled && len(app.editors) > 1
+		}
 		if item.IsEnabled() != enabled {
 			item.SetEnabled(enabled)
+		}
+	}
+	if item := app.menu.ItemByID("close"); item != nil {
+		label := locales.CloseToast()
+		if app.settingState.Open {
+			label = locales.CloseSettings()
+		}
+		if item.Label != label {
+			item.SetLabel(label)
 		}
 	}
 }

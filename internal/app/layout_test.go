@@ -608,7 +608,8 @@ func TestSidebarSelectionKeepsFocusForConsecutiveNavigation(t *testing.T) {
 			t.Fatalf("连续选择 %s 失败或焦点离开列表", want)
 		}
 	}
-	tt.Key(ui.Ctrl|ui.Shift, ui.KeyTab)
+	runMenuCommand(t, app, "previous-tab")
+	tt.Frame()
 	if activeID(app) != "editor-2" || !app.active.(*format.FormatEditor).Focused() {
 		t.Fatal("编辑器切换快捷键未聚焦文档")
 	}

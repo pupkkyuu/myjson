@@ -5,7 +5,7 @@ import (
 
 	"myjson/internal/component"
 	"myjson/internal/locales"
-	"myjson/pkg/icons"
+	"myjson/pkg/icons/lucide"
 )
 
 type windowCommands interface {

@@ -1,6 +1,7 @@
 package format
 
 import (
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -8,6 +9,7 @@ import (
 	"github.com/egoist/mygo/ui"
 	mygoeditor "github.com/egoist/mygo/ui/editor"
 
+	"myjson/internal/editor"
 	"myjson/internal/locales"
 	"myjson/pkg/json"
 )
@@ -104,6 +106,125 @@ func TestTransformFailureAndNoChangePreserveHistory(t *testing.T) {
 			}
 			if tc.failure && !strings.Contains(strings.Join(tt.Texts(), "\n"), "JSON 格式错误") {
 				t.Fatal("变换失败后应渲染错误提示")
+			}
+		})
+	}
+}
+
+func TestTransformsPreservePositionUnlessTextChanges(t *testing.T) {
+	compact := "[" + strings.Repeat(`{"a":1},`, 1000) + "null]"
+	formatted, err := json.Format(compact)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		name, source, want string
+		run                func(string) (string, error)
+	}{
+		{"格式化不变", formatted, formatted, json.Format},
+		{"压缩不变", compact, compact, json.Compact},
+		{"排序不变", formatted, formatted, json.SortFields},
+		{"去转义不变", formatted, formatted, json.Unescape},
+		{"仅换行不同", formatted, formatted, func(source string) (string, error) {
+			return strings.ReplaceAll(source, "\n", "\r\n"), nil
+		}},
+		{"压缩有变化", formatted, compact, json.Compact},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e := NewFormatEditor("editor-1", tc.source)
+			e.SoftWrap = true
+			tt, wake := mountEditor(e)
+			e.Focus()
+			e.Select(e.Buffer.Len()/3, e.Buffer.Len()/3+3)
+			e.SetScrollY(200)
+			tt.Frame()
+			version := e.Buffer.Version()
+
+			started, release := make(chan struct{}), make(chan struct{})
+			e.transform(func(source string) (string, error) {
+				close(started)
+				<-release
+				return tc.run(source)
+			})
+			waitForEditor(t, started)
+			// 后台运行期间的位置变化也必须保留，不能恢复任务启动时的位置。
+			e.SetSelections(
+				mygoeditor.Selection{Anchor: e.Buffer.Len() / 2, Head: e.Buffer.Len()/2 + 3},
+				mygoeditor.Selection{Anchor: e.Buffer.Len()*2/3 + 3, Head: e.Buffer.Len() * 2 / 3},
+			)
+			e.SetScrollY(400)
+			tt.Frame()
+			selections, scroll := e.Selections(), e.ScrollY()
+			close(release)
+			waitForEditor(t, wake)
+			if scroll <= 0 {
+				t.Fatal("测试前应已滚离顶部")
+			}
+			tt.Frame()
+			if e.Loading() || e.Buffer.String() != tc.want || !e.Focused() {
+				t.Fatal("变换完成后的文本、忙碌状态或焦点不正确")
+			}
+			if tc.source == tc.want {
+				if !reflect.DeepEqual(e.Selections(), selections) || e.ScrollY() != scroll {
+					t.Fatalf("无变化变换重置了位置：选区 %v -> %v，滚动 %g -> %g", selections, e.Selections(), scroll, e.ScrollY())
+				}
+				if e.Buffer.Version() != version || e.Buffer.CanUndo() {
+					t.Fatal("无变化变换修改了文档版本或撤销历史")
+				}
+			} else {
+				if e.Cursor() != 0 || e.ScrollY() != 0 {
+					t.Fatal("有变化的变换应按原有行为回到顶部")
+				}
+				if !e.Buffer.Undo() || e.Buffer.String() != tc.source {
+					t.Fatal("有变化的变换应保留撤销能力")
+				}
+			}
+		})
+	}
+}
+
+func TestTransformErrorToastMatchesDiagnostic(t *testing.T) {
+	for _, tc := range []struct {
+		name, source             string
+		start, end, line, column int
+	}{
+		{"EOF 后换行", "{\n  \"a\": 1\n", 9, 10, 2, 8},
+		{"EOF 后多行空白", "{\n  \"a\": 1\n \t\n", 9, 10, 2, 8},
+		{"EOF 后无空白", "{\n  \"a\": 1", 9, 10, 2, 8},
+		{"Unicode 值后的 EOF", "{\n  \"a\": \"中🙂\"\n", 17, 18, 2, 11},
+		{"字符串内非法换行", "{\n  \"a\": \"中\n", 10, 13, 2, 9},
+		{"非法值", "{\n  \"a\": ?\n}", 9, 10, 2, 8},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			for _, action := range []struct {
+				name string
+				run  func(*FormatEditor)
+			}{
+				{"格式化", (*FormatEditor).Format},
+				{"压缩", (*FormatEditor).Compact},
+				{"字段排序", (*FormatEditor).SortFields},
+			} {
+				t.Run(action.name, func(t *testing.T) {
+					e := NewFormatEditor("editor-1", tc.source)
+					tt, wake := mountEditor(e)
+					version := e.Buffer.Version()
+					action.run(e)
+					waitForEditor(t, wake)
+					tt.Frame()
+					if e.Loading() || e.Buffer.String() != tc.source || e.Buffer.Version() != version || e.Buffer.CanUndo() {
+						t.Fatal("失败的变换不应修改文档或撤销历史")
+					}
+					diagnostics := e.Diagnostics()
+					if len(diagnostics) != 1 {
+						t.Fatalf("失败后应立即显示一处红线，得到 %+v", diagnostics)
+					}
+					d := diagnostics[0]
+					want := json.Validate(tc.source)[0]
+					message := locales.JsonErrorLocation(tc.line, tc.column, want.Detail)
+					if d.Start != tc.start || d.End != tc.end || d.Message != message || !tt.HasText(message) {
+						t.Fatalf("Toast 与红线应使用相同诊断位置：诊断 %+v，期望范围 [%d,%d)、提示 %q，界面文本 %q", d, tc.start, tc.end, message, tt.Texts())
+					}
+				})
 			}
 		})
 	}
@@ -348,6 +469,23 @@ func TestThemeChangesAndCanceledFocusPreserveEditingState(t *testing.T) {
 	}
 	if !e.Buffer.Undo() || e.Buffer.String() != "{}" {
 		t.Fatal("切换主题应保留原有撤销记录")
+	}
+}
+
+func TestDiagnosticsReadImmutableSnapshotChunks(t *testing.T) {
+	for _, source := range []string{
+		"{\r\n  \"a\": 1\r\n}",
+		`{"text":"` + strings.Repeat("中文🙂\\\"", 2000) + `"}`,
+	} {
+		e := NewFormatEditor("editor-1", source)
+		// Remove the closing brace to create EOF after an edit to the text tree.
+		e.Buffer.Edit(mygoeditor.Edit{Start: e.Buffer.Len() - 1, End: e.Buffer.Len()})
+		snapshot := e.Buffer.Snapshot()
+		want := editor.Diagnostics(json.Validate(snapshot.String()))
+		e.Buffer.Set("{}")
+		if got := e.diagnose(snapshot); len(got) != 1 || !reflect.DeepEqual(got, want) {
+			t.Fatalf("快照分块诊断应保留编辑前的文本及位置：得到 %+v，期望 %+v", got, want)
+		}
 	}
 }
 
