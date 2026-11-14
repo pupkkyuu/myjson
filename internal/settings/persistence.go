@@ -14,21 +14,23 @@ import (
 	mygoeditor "github.com/egoist/mygo/ui/editor"
 
 	"myjson/internal/editor"
+	"myjson/internal/palette"
 )
 
 // Saved holds the preferences that survive application restarts.
+// JSON member names follow the exported Go field names throughout the file.
 type Saved struct {
-	Preferences editor.Preferences `json:"preferences"`
-	Zoom        int                `json:"zoom"`
-	Theme       mygo.ThemeSource   `json:"theme"`
+	Preferences editor.Preferences
+	Zoom        int
+	Theme       mygo.ThemeSource
 	// LightWash 和 DarkWash 是浅色、深色外观各自用的主题名字。
-	LightWash string `json:"lightWash"`
-	DarkWash  string `json:"darkWash"`
+	LightWash string
+	DarkWash  string
 }
 
 // DefaultSaved returns the default persistent settings.
 func DefaultSaved() Saved {
-	return Saved{Preferences: editor.DefaultPreferences(), Zoom: 100, Theme: mygo.ThemeSystem, LightWash: defaultWash, DarkWash: defaultWash}
+	return Saved{Preferences: editor.DefaultPreferences(), Zoom: 100, Theme: mygo.ThemeSystem, LightWash: palette.Default, DarkWash: palette.Default}
 }
 
 // Snapshot returns the current settings, including the supplied theme.
@@ -63,7 +65,8 @@ func Load(path string) (Saved, error) {
 	if err != nil {
 		return saved, fmt.Errorf("read settings: %w", err)
 	}
-	if err := json.Unmarshal(data, &saved); err != nil {
+	// Accept the lower-camel-case names written by earlier versions.
+	if err := json.Unmarshal(data, &saved, json.MatchCaseInsensitiveNames(true)); err != nil {
 		return DefaultSaved(), fmt.Errorf("parse settings: %w", err)
 	}
 	return validateSaved(saved), nil
@@ -113,7 +116,7 @@ func validateSaved(s Saved) Saved {
 }
 
 func knownWash(id string) bool {
-	return slices.Contains(washIDs, id)
+	return slices.Contains(palette.IDs(), id)
 }
 
 // Save writes a temporary file and replaces the configuration after closing it.

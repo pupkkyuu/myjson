@@ -1,7 +1,6 @@
 package format
 
 import (
-	"errors"
 	"time"
 
 	"github.com/egoist/mygo/ui"
@@ -9,7 +8,6 @@ import (
 	"myjson/internal/component"
 	"myjson/internal/editor"
 	"myjson/internal/locales"
-	"myjson/pkg/json"
 )
 
 // transform 异步处理当前文档快照，并在完成后通知界面刷新。
@@ -24,12 +22,8 @@ func (e *FormatEditor) transform(transform func(string) (string, error)) {
 	e.transformPolling = wake == nil
 
 	go func() {
-		text, err := transform(snapshot.String())
-		results <- transformResult{
-			version: snapshot.Version(),
-			text:    text,
-			err:     err,
-		}
+		prepared, err := PrepareTransform(snapshot, transform)
+		results <- transformResult{PreparedTransform: prepared, err: err}
 
 		if wake != nil {
 			wake()
@@ -44,17 +38,19 @@ func (e *FormatEditor) refreshTransform(c *ui.Context) {
 		e.pendingTransform = nil
 		e.transformPolling = false
 		c.Invalidate()
-		if r.version == e.Buffer.Version() {
+		if r.Version == e.Buffer.Version() {
 			if r.err != nil {
+				e.version = r.Version
+				e.deadline = time.Time{}
+				e.SetDiagnostics(r.Version, editor.Diagnostics(r.Diagnostics))
 				message := r.err.Error()
-				if located, ok := errors.AsType[*json.LocationError](r.err); ok {
-					message = locales.JsonErrorLocation(located.Line, located.Column, located.Cause.Error())
+				if len(r.Diagnostics) != 0 {
+					d := r.Diagnostics[0]
+					message = locales.JsonErrorLocation(d.Line, d.Column, d.Detail)
 				}
 				c.AddToast(ui.Toast{Title: message, Type: component.ToastError})
 			} else {
-				e.Buffer.Set(r.text)
-				e.State.Select(0, 0)
-				e.ScrollTo(0)
+				e.ApplyTransform(r.PreparedTransform)
 				e.focus.Focus()
 			}
 		}

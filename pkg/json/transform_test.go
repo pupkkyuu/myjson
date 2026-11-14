@@ -46,6 +46,20 @@ func TestCompact(t *testing.T) {
 	}
 }
 
+func TestFormatWithIndent(t *testing.T) {
+	t.Parallel()
+	for _, indent := range []string{"", "\t", "    "} {
+		t.Run(indent, func(t *testing.T) {
+			source := ` {"a":[1]} `
+			want := "{\n" + indent + "\"a\": [\n" + indent + indent + "1\n" + indent + "]\n}"
+			got, err := json.FormatWithIndent(source, indent)
+			if err != nil || got != want {
+				t.Fatalf("自定义缩进结果 = %q，错误 = %v；期望 %q", got, err, want)
+			}
+		})
+	}
+}
+
 func TestStructuredTransformsRejectInvalidInput(t *testing.T) {
 	t.Parallel()
 	for name, transform := range map[string]func(string) (string, error){

@@ -6,7 +6,7 @@ import (
 	"github.com/egoist/mygo/ui"
 
 	"myjson/internal/component"
-	"myjson/pkg/icons"
+	"myjson/pkg/icons/lucide"
 )
 
 func TestIconButtonInputDisabledAndKeepFocus(t *testing.T) {

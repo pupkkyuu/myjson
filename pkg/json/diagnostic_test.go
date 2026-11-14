@@ -1,6 +1,7 @@
 package json_test
 
 import (
+	"bytes"
 	"encoding/json/jsontext"
 	"errors"
 	"fmt"
@@ -13,10 +14,42 @@ import (
 
 func TestValidateAcceptsValidOrBlankInput(t *testing.T) {
 	t.Parallel()
-	for _, source := range []string{"", " \t\r\n", `{"a":1,"b":2}`} {
+	for _, source := range []string{"", " \t\r\n", `{"a":1,"b":2}`, `"中文🙂"`, "true", "null", "1e999"} {
 		if got := json.Validate(source); len(got) != 0 {
 			t.Errorf("%q 不应产生诊断：%+v", source, got)
 		}
+	}
+}
+
+func TestValidateBytesPreservesInputAndDiagnosticLocations(t *testing.T) {
+	t.Parallel()
+	for _, source := range []string{
+		"", " \t\r\n", `{"a":1,"b":2}`, `"中文🙂"`, "true", "1e999",
+		`{"a":1,"a":2}`, `{"a":1,"\u0061":2}`, `"\ud800"`, "\"\xff\"",
+		"{\n  \"a\": 1\n \t\n", "{\"a\":\"中\n文\"}", "{\r\n\"a\":?}",
+		"{} []", "{}true", "true false", "01", "1e", "{} \n中", "{}\xff", "{}\u00a0",
+	} {
+		t.Run(source, func(t *testing.T) {
+			data := []byte(source)
+			got := json.ValidateBytes(data)
+			if !bytes.Equal(data, []byte(source)) {
+				t.Fatal("校验不应修改输入字节")
+			}
+			var want []json.Diagnostic
+			if !json.IsBlank(source) {
+				_, err := json.Format(source)
+				want = json.DiagnosticsForError(source, err)
+			}
+			if len(got) != len(want) {
+				t.Fatalf("字节校验与格式化的有效性不一致：诊断 %+v，期望 %+v", got, want)
+			}
+			for i, d := range got {
+				w := want[i]
+				if d.Start != w.Start || d.End != w.End || d.Line != w.Line || d.Column != w.Column || d.Detail == "" {
+					t.Fatalf("字节校验诊断 = %+v，期望位置 %+v", d, w)
+				}
+			}
+		})
 	}
 }
 
@@ -72,6 +105,34 @@ func TestLocationErrorPreservesCauseAndUnicodePosition(t *testing.T) {
 	ds := json.DiagnosticsForError(source, wrapper)
 	if len(ds) != 1 || ds[0].Column != 7 || ds[0].Detail != syntax.Error() {
 		t.Fatalf("包装错误诊断 = %+v", ds)
+	}
+}
+
+func TestLocationAndDiagnosticKeepDistinctAnchors(t *testing.T) {
+	t.Parallel()
+	for _, tc := range []struct {
+		name, source                                 string
+		locationLine, locationColumn                 int
+		start, end, diagnosticLine, diagnosticColumn int
+	}{
+		{"EOF 后的空白", "{\"a\":1  \n", 2, 1, 5, 6, 1, 6},
+		{"多字节字符后的非法换行", "{\"a\":\"中\n文\"}", 1, 8, 6, 9, 1, 7},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := json.Format(tc.source)
+			var located *json.LocationError
+			if !errors.As(err, &located) || located.Line != tc.locationLine || located.Column != tc.locationColumn {
+				t.Fatalf("格式化错误位置 = %v，期望 %d:%d", err, tc.locationLine, tc.locationColumn)
+			}
+			diagnostics := json.DiagnosticsForError(tc.source, err)
+			if len(diagnostics) != 1 {
+				t.Fatalf("期望一个诊断，得到 %+v", diagnostics)
+			}
+			d := diagnostics[0]
+			if d.Start != tc.start || d.End != tc.end || d.Line != tc.diagnosticLine || d.Column != tc.diagnosticColumn {
+				t.Fatalf("诊断 = %+v，期望范围 [%d,%d)、位置 %d:%d", d, tc.start, tc.end, tc.diagnosticLine, tc.diagnosticColumn)
+			}
+		})
 	}
 }
 

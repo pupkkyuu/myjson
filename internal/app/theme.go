@@ -1,11 +1,16 @@
 package app
 
-import "github.com/egoist/mygo/ui"
+import (
+	"github.com/egoist/mygo/ui"
+
+	"myjson/internal/palette"
+)
 
 // resolveTheme 根据外观、所选主题、对比度和文字缩放生成新主题，避免调整跨帧累积。
 // id 是主题的名字，未知时用默认主题。
 func resolveTheme(c *ui.Context, id string) *ui.Theme {
-	t := lookFor(id, c.Theme().Dark).theme
+	// 基础主题由 palette 共享，偏好只应用到本帧的副本。
+	t := *palette.LookFor(id, c.Theme().Dark).Theme
 	p := c.Preferences()
 	if p.HighContrast {
 		t.Border = t.Border.Mix(t.Text, 0.45)
@@ -16,5 +21,5 @@ func resolveTheme(c *ui.Context, id string) *ui.Theme {
 	if s := p.TextScale; s > 0 && s != 1 {
 		t.FontSize *= s
 	}
-	return t
+	return &t
 }

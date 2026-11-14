@@ -3,10 +3,10 @@ package settings
 import (
 	"strconv"
 
-	"github.com/egoist/mygo/plugins/glass"
 	"github.com/egoist/mygo/ui"
 	mygoeditor "github.com/egoist/mygo/ui/editor"
 
+	"myjson/internal/component"
 	"myjson/internal/editor"
 	"myjson/internal/locales"
 )
@@ -23,19 +23,19 @@ func editorSettings(c *ui.Context, width float32, p *editor.Preferences) {
 		})
 	})
 	settingRow(c, width, locales.EditorLineHeight(), locales.EditorLineHeightDescription(), func(c *ui.Context, title ui.Element) {
-		preferenceSelect(c, title, locales.EditorLineHeight(), &p.LineHeight, []choice[float32]{{1.3, "1.3"}, {1.5, "1.5"}, {1.8, "1.8"}})
+		preferenceSelect(c, title, locales.EditorLineHeight(), &p.LineHeight, []component.Choice[float32]{{Value: 1.3, Label: "1.3"}, {Value: 1.5, Label: "1.5"}, {Value: 1.8, Label: "1.8"}})
 	})
 	settingRow(c, width, locales.EditorIndentWidth(), locales.EditorIndentWidthDescription(), func(c *ui.Context, title ui.Element) {
-		preferenceSelect(c, title, locales.EditorIndentWidth(), &p.TabSize, []choice[int]{{2, "2"}, {4, "4"}, {8, "8"}})
+		preferenceSelect(c, title, locales.EditorIndentWidth(), &p.TabSize, []component.Choice[int]{{Value: 2, Label: "2"}, {Value: 4, Label: "4"}, {Value: 8, Label: "8"}})
 	})
 	settingToggle(c, width, locales.EditorDefaultWrap(), locales.EditorDefaultWrapDescription(), &p.DefaultWrap)
 	settingRow(c, width, locales.EditorWhitespace(), locales.EditorWhitespaceDescription(), func(c *ui.Context, title ui.Element) {
-		preferenceSelect(c, title, locales.EditorWhitespace(), &p.Whitespace, []choice[mygoeditor.Whitespace]{
-			{mygoeditor.WhitespaceSelection, locales.WhitespaceSelection()},
-			{mygoeditor.WhitespaceNone, locales.WhitespaceNone()},
-			{mygoeditor.WhitespaceAll, locales.WhitespaceAll()},
-			{mygoeditor.WhitespaceTrailing, locales.WhitespaceTrailing()},
-			{mygoeditor.WhitespaceBoundary, locales.WhitespaceBoundary()},
+		preferenceSelect(c, title, locales.EditorWhitespace(), &p.Whitespace, []component.Choice[mygoeditor.Whitespace]{
+			{Value: mygoeditor.WhitespaceSelection, Label: locales.WhitespaceSelection()},
+			{Value: mygoeditor.WhitespaceNone, Label: locales.WhitespaceNone()},
+			{Value: mygoeditor.WhitespaceAll, Label: locales.WhitespaceAll()},
+			{Value: mygoeditor.WhitespaceTrailing, Label: locales.WhitespaceTrailing()},
+			{Value: mygoeditor.WhitespaceBoundary, Label: locales.WhitespaceBoundary()},
 		})
 	})
 	settingToggle(c, width, locales.EditorIndentGuides(), locales.EditorIndentGuidesDescription(), &p.IndentGuides)
@@ -45,14 +45,14 @@ func editorSettings(c *ui.Context, width float32, p *editor.Preferences) {
 
 func diffSettings(c *ui.Context, width float32, p *editor.Preferences) {
 	settingRow(c, width, locales.DiffLayout(), locales.DiffLayoutDescription(), func(c *ui.Context, title ui.Element) {
-		preferenceSelect(c, title, locales.DiffLayout(), &p.DiffLayout, []choice[mygoeditor.DiffLayout]{
-			{mygoeditor.DiffSplit, locales.DiffLayoutSplit()}, {mygoeditor.DiffUnified, locales.DiffLayoutUnified()},
+		preferenceSelect(c, title, locales.DiffLayout(), &p.DiffLayout, []component.Choice[mygoeditor.DiffLayout]{
+			{Value: mygoeditor.DiffSplit, Label: locales.DiffLayoutSplit()}, {Value: mygoeditor.DiffUnified, Label: locales.DiffLayoutUnified()},
 		})
 	})
 	settingRow(c, width, locales.DiffInlineHighlight(), locales.DiffInlineHighlightDescription(), func(c *ui.Context, title ui.Element) {
-		preferenceSelect(c, title, locales.DiffInlineHighlight(), &p.DiffInline, []choice[mygoeditor.DiffInline]{
-			{mygoeditor.DiffInlineChar, locales.DiffInlineChar()}, {mygoeditor.DiffInlineWord, locales.DiffInlineWord()},
-			{mygoeditor.DiffInlineNone, locales.DiffInlineNone()},
+		preferenceSelect(c, title, locales.DiffInlineHighlight(), &p.DiffInline, []component.Choice[mygoeditor.DiffInline]{
+			{Value: mygoeditor.DiffInlineChar, Label: locales.DiffInlineChar()}, {Value: mygoeditor.DiffInlineWord, Label: locales.DiffInlineWord()},
+			{Value: mygoeditor.DiffInlineNone, Label: locales.DiffInlineNone()},
 		})
 	})
 }
@@ -83,39 +83,11 @@ func settingToggle(c *ui.Context, width float32, label, description string, valu
 	})
 }
 
-type choice[T comparable] struct {
-	value T
-	label string
-}
-
-func preferenceSelect[T comparable](c *ui.Context, title ui.Element, label string, value *T, choices []choice[T]) {
+func preferenceSelect[T comparable](c *ui.Context, title ui.Element, label string, value *T, choices []component.Choice[T]) {
 	t := c.Theme()
-	selectBox := ui.SelectBase(c, value)
-	styleSelectTrigger(c, selectBox.Trigger)
-	selectBox.Trigger.Label(locales.SettingControl(label)).LabelledBy(title).MinWidth(t.Space(32)).MaxWidthPercent(100).Children(func() {
-		for _, option := range choices {
-			if option.value == *value {
-				ui.Text(c, option.label).SingleLine()
-				break
-			}
-		}
-	})
-	selectBox.Popup(func(panel ui.Element) {
-		panel.Padding(t.Space(1)).Radius(t.Radius*1.5).
-			Material(glass.Glass{Tint: t.Background.Alpha(.92)}).Border(1, t.Border).
-			Shadow(0, t.Space(1), t.Space(4), 0, ui.RGBA(0, 0, 0, .14))
-		for _, option := range choices {
-			item := selectBox.Item(option.value).Label(option.label).Padding(t.Space(1.5), t.Space(2.5)).Radius(t.Radius).
-				Background(ui.Transparent).TextColor(t.Text)
-			if option.value == *value {
-				item.Background(t.Text.Alpha(.1))
-			} else if item.Hovered() || item.Highlighted() {
-				item.Background(t.Text.Alpha(.04))
-			}
-			item.Children(func() { ui.Text(c, option.label) })
-		}
-	})
-	if selectBox.Trigger.Changed() {
+	trigger := component.Select(c, value, choices, "")
+	trigger.Label(locales.SettingControl(label)).LabelledBy(title).MinWidth(t.Space(32)).MaxWidthPercent(100)
+	if trigger.Changed() {
 		c.Invalidate()
 	}
 }

@@ -1,7 +1,6 @@
 package settings
 
 import (
-	"encoding/json"
 	"fmt"
 	"image/png"
 	"os"
@@ -15,17 +14,9 @@ import (
 )
 
 func TestAboutMetadataAndNavigation(t *testing.T) {
-	data, err := os.ReadFile("../../mygo.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	var manifest struct{ Version string }
-	if err := json.Unmarshal(data, &manifest); err != nil {
-		t.Fatal(err)
-	}
-	if manifest.Version != applicationVersion {
-		t.Fatal("关于页面的回退版本与 mygo.json 不一致")
-	}
+	previous := mygo.App.Version()
+	t.Cleanup(func() { mygo.App.SetVersion(previous) })
+	mygo.App.SetVersion("1.2.3")
 	state := State{Open: true}
 	tt := ui.NewTester(func(c *ui.Context) { View(c, &state, 48) }, 1000, 650)
 	if err := tt.Click(locales.About()); err != nil {
@@ -34,7 +25,7 @@ func TestAboutMetadataAndNavigation(t *testing.T) {
 	if tt.HasText(locales.ApplicationName()) {
 		t.Fatal("关于页面不应显示应用名称")
 	}
-	for _, value := range []string{manifest.Version, applicationAuthor, applicationRepository} {
+	for _, value := range []string{"1.2.3", applicationRepository} {
 		if !tt.HasText(value) {
 			t.Fatalf("关于页面缺少 %q", value)
 		}
@@ -48,15 +39,13 @@ func TestAboutMetadataAndNavigation(t *testing.T) {
 	tt.Key(0, ui.KeyEscape)
 	state.Open = true
 	tt.Frame()
-	if state.Category != aboutCategory || !tt.HasText(manifest.Version) {
+	if state.Category != aboutCategory || !tt.HasText("1.2.3") {
 		t.Fatal("重新打开设置未保留关于分类")
 	}
-	previous := mygo.App.Version()
-	t.Cleanup(func() { mygo.App.SetVersion(previous) })
 	mygo.App.SetVersion("9.8.7")
 	tt.Frame()
 	if !tt.HasText("9.8.7") {
-		t.Fatal("关于页面应优先显示运行时构建版本")
+		t.Fatal("关于页面应显示运行时构建版本")
 	}
 }
 

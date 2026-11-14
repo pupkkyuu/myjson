@@ -2,7 +2,7 @@ package toolbar
 
 import (
 	"myjson/internal/locales"
-	"myjson/pkg/icons"
+	"myjson/pkg/icons/lucide"
 )
 
 const (

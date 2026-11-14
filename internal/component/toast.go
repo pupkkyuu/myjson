@@ -5,7 +5,7 @@ import (
 	"github.com/egoist/mygo/ui"
 
 	"myjson/internal/locales"
-	"myjson/pkg/icons"
+	"myjson/pkg/icons/lucide"
 )
 
 const (
@@ -148,7 +148,7 @@ func toastLeading(c *ui.Context, kind string) {
 	case ToastSuccess:
 		icon, color = icons.CircleCheck(), t.Success
 	case ToastWarning:
-		icon, color = icons.TriangleAlert(), t.Warning
+		icon, color = icons.TriangleExclamationPoint(), t.Warning
 	case ToastError:
 		icon, color = icons.CircleX(), t.Danger
 	default:

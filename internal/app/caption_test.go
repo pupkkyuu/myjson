@@ -8,7 +8,8 @@ import (
 
 	"myjson/internal/component"
 	"myjson/internal/locales"
-	"myjson/pkg/icons"
+	"myjson/internal/palette"
+	"myjson/pkg/icons/lucide"
 )
 
 type testWindowCommands struct {
@@ -46,7 +47,7 @@ func TestCaptionAndToolbarGlyphsMatch(t *testing.T) {
 	for _, scale := range []float32{1, 1.5, 2} {
 		app := newApplication()
 		tt := ui.NewTester(func(c *ui.Context) {
-			app.theme = resolveTheme(c, defaultWash)
+			app.theme = resolveTheme(c, palette.Default)
 			c.SetTheme(app.theme)
 			c.Root().Background(ui.Transparent)
 			ui.Column(c).Children(func() {

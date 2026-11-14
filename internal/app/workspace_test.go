@@ -112,11 +112,13 @@ func TestWorkspaceShortcutsRespectSettingsModal(t *testing.T) {
 	app := workspaceWithTabs(3)
 	app.active = app.editors[0]
 	tt := mountWorkspace(app)
-	tt.Key(ui.Ctrl|ui.Shift, ui.KeyTab)
+	runMenuCommand(t, app, "previous-tab")
+	tt.Frame()
 	if activeID(app) != "editor-3" {
 		t.Fatal("向左切换应从首项循环到末项")
 	}
-	tt.Key(ui.Ctrl, ui.KeyTab)
+	runMenuCommand(t, app, "next-tab")
+	tt.Frame()
 	if activeID(app) != "editor-1" {
 		t.Fatal("向右切换应从末项循环到首项")
 	}
@@ -138,6 +140,8 @@ func TestWorkspaceShortcutsRespectSettingsModal(t *testing.T) {
 	} {
 		tt.Key(shortcut.mods, shortcut.key)
 	}
+	runMenuCommand(t, app, "previous-tab")
+	runMenuCommand(t, app, "next-tab")
 	if len(app.editors) != 3 || activeID(app) != "editor-1" {
 		t.Fatal("设置面板打开时应阻止工作区快捷键")
 	}
@@ -145,7 +149,8 @@ func TestWorkspaceShortcutsRespectSettingsModal(t *testing.T) {
 	if app.settingState.Open {
 		t.Fatal("Esc 应关闭设置")
 	}
-	tt.Key(ui.Ctrl, ui.KeyTab)
+	runMenuCommand(t, app, "next-tab")
+	tt.Frame()
 	if activeID(app) != "editor-2" {
 		t.Fatal("关闭设置后应恢复切换快捷键")
 	}

@@ -13,8 +13,9 @@ import (
 	"myjson/internal/component"
 	"myjson/internal/editor"
 	"myjson/internal/locales"
+	"myjson/internal/palette"
 	"myjson/internal/settings"
-	"myjson/pkg/icons"
+	"myjson/pkg/icons/lucide"
 )
 
 var emptyBackground = func() *ui.Bitmap {
@@ -85,29 +86,21 @@ func (app *Application) shortcuts(c *ui.Context) {
 		app.addFormatEditor(c)
 		c.Invalidate()
 	}
-	if c.Shortcut(ui.Ctrl|ui.Shift, ui.KeyTab) {
-		app.cycleEditor(-1)
-		c.Invalidate()
-	}
-	if c.Shortcut(ui.Ctrl, ui.KeyTab) {
-		app.cycleEditor(1)
-		c.Invalidate()
-	}
 }
 
 // backdrop 画整窗的底色：纯色主题是一块侧栏色，其余是从上到下的渐变，
 // 再从右上角叠一层光晕。开了材质时渐变只留一点透出去，让文字不跟着壁纸变亮或变暗。
 func (app *Application) backdrop(c *ui.Context, row ui.Element) {
-	l := lookFor(app.settingState.Wash(c.Theme().Dark), c.Theme().Dark)
-	if l.plain {
-		bg := l.sidebar
+	l := palette.LookFor(app.settingState.Wash(c.Theme().Dark), c.Theme().Dark)
+	if l.Plain {
+		bg := l.Sidebar
 		if c.Vibrancy() {
 			bg = bg.Alpha(0.82)
 		}
 		c.Root().Background(bg)
 		return
 	}
-	base := l.base
+	base := l.Base
 	if c.Vibrancy() {
 		stops := make([]ui.GradientStop, len(base.Stops))
 		for i, st := range base.Stops {
@@ -116,7 +109,7 @@ func (app *Application) backdrop(c *ui.Context, row ui.Element) {
 		base.Stops = stops
 	}
 	c.Root().LinearGradient(base)
-	row.LinearGradient(l.glow)
+	row.LinearGradient(l.Glow)
 }
 
 // workspace 渲染工作区和侧栏；侧栏动画期间保持面板层级以保留编辑器状态。

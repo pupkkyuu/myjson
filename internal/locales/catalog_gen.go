@@ -539,6 +539,34 @@ func (msgs Messages) MenuView() string {
 	return Catalog.Format(msgs.locale, "menuView", nil)
 }
 
+// PreviousTab says "上一个标签"
+// in the language the app shows.
+//
+// 切换到上一个标签页的窗口菜单命令。
+func PreviousTab() string { return In(i18n.Locale()).PreviousTab() }
+
+// PreviousTab says "上一个标签"
+// in the language of msgs.
+//
+// 切换到上一个标签页的窗口菜单命令。
+func (msgs Messages) PreviousTab() string {
+	return Catalog.Format(msgs.locale, "previousTab", nil)
+}
+
+// NextTab says "下一个标签"
+// in the language the app shows.
+//
+// 切换到下一个标签页的窗口菜单命令。
+func NextTab() string { return In(i18n.Locale()).NextTab() }
+
+// NextTab says "下一个标签"
+// in the language of msgs.
+//
+// 切换到下一个标签页的窗口菜单命令。
+func (msgs Messages) NextTab() string {
+	return Catalog.Format(msgs.locale, "nextTab", nil)
+}
+
 // ZoomIn says "放大界面"
 // in the language the app shows.
 //
@@ -1691,20 +1719,6 @@ func ApplicationVersion() string { return In(i18n.Locale()).ApplicationVersion()
 // 关于页面的版本号文案。
 func (msgs Messages) ApplicationVersion() string {
 	return Catalog.Format(msgs.locale, "applicationVersion", nil)
-}
-
-// ApplicationAuthor says "作者"
-// in the language the app shows.
-//
-// 关于页面的作者文案。
-func ApplicationAuthor() string { return In(i18n.Locale()).ApplicationAuthor() }
-
-// ApplicationAuthor says "作者"
-// in the language of msgs.
-//
-// 关于页面的作者文案。
-func (msgs Messages) ApplicationAuthor() string {
-	return Catalog.Format(msgs.locale, "applicationAuthor", nil)
 }
 
 // Transforming says "正在处理"

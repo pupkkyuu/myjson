@@ -1,7 +1,6 @@
 package diff
 
 import (
-	"strings"
 	"time"
 
 	"github.com/egoist/mygo/ui"
@@ -11,7 +10,6 @@ import (
 	"myjson/internal/editor"
 	"myjson/internal/editor/format"
 	"myjson/internal/locales"
-	"myjson/pkg/json"
 )
 
 func (e *DiffEditor) Loading() bool {
@@ -35,20 +33,11 @@ func (e *DiffEditor) transform(transform func(string) (string, error)) {
 			prepared[i].Version = snapshot.Version()
 		}
 		for i, snapshot := range snapshots {
-			source := snapshot.String()
 			r := &prepared[i]
-			r.Text = source
-			if strings.Trim(source, " \t\r\n") == "" {
-				continue
-			}
-			r.Text, r.err = transform(source)
+			r.PreparedTransform, r.err = format.PrepareTransform(snapshot, transform)
 			if r.err != nil {
-				r.Diagnostics = json.DiagnosticsForError(source, r.err)
 				break
 			}
-			r.Text = strings.ReplaceAll(r.Text, "\r\n", "\n")
-			r.Changed = r.Text != source
-			r.Diagnostics = json.Validate(r.Text)
 		}
 		results <- prepared
 		if wake != nil {

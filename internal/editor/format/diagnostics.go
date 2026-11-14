@@ -47,7 +47,7 @@ func (e *FormatEditor) refreshDiagnostics(c *ui.Context) {
 			go func() {
 				result <- diagnosticsResult{
 					version:    snapshot.Version(),
-					diagnostic: e.diagnose(snapshot.String()),
+					diagnostic: e.diagnose(snapshot),
 				}
 
 				if wake != nil {
@@ -62,7 +62,12 @@ func (e *FormatEditor) refreshDiagnostics(c *ui.Context) {
 	}
 }
 
-func (e *FormatEditor) diagnose(text string) []mygoeditor.Diagnostic {
-	diagnostics := json.Validate(text)
+func (e *FormatEditor) diagnose(snapshot mygoeditor.Snapshot) []mygoeditor.Diagnostic {
+	data := make([]byte, 0, snapshot.Len())
+	snapshot.Chunks(0, snapshot.Len(), func(text string) bool {
+		data = append(data, text...)
+		return true
+	})
+	diagnostics := json.ValidateBytes(data)
 	return editor.Diagnostics(diagnostics)
 }
