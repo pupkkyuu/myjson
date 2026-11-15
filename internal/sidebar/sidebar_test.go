@@ -2,9 +2,6 @@ package sidebar
 
 import (
 	"fmt"
-	"image/png"
-	"os"
-	"path/filepath"
 	"slices"
 	"testing"
 
@@ -114,25 +111,6 @@ func TestSidebarLayoutAcrossThemesAndScales(t *testing.T) {
 					}
 					if first.X < 0 || first.X+first.W > float32(width) {
 						t.Fatalf("标签越过侧栏边界：%+v", first)
-					}
-					if directory := os.Getenv("MYJSON_TEST_SCREENSHOTS"); directory != "" {
-						for _, disabled := range []bool{false, true} {
-							options.Disabled = disabled
-							tt.Frame()
-							if err := os.MkdirAll(directory, 0755); err != nil {
-								t.Fatal(err)
-							}
-							name := fmt.Sprintf("sidebar-%d-dark-%v-scale-%g-disabled-%v.png", width, dark, scale, disabled)
-							f, err := os.Create(filepath.Join(directory, name))
-							if err != nil {
-								t.Fatal(err)
-							}
-							err = png.Encode(f, tt.Image())
-							closeErr := f.Close()
-							if err != nil || closeErr != nil {
-								t.Fatalf("保存侧栏截图失败：%v / %v", err, closeErr)
-							}
-						}
 					}
 				})
 			}

@@ -7,7 +7,6 @@ import (
 	mygoeditor "github.com/egoist/mygo/ui/editor"
 
 	"myjson/internal/component"
-	"myjson/internal/editor"
 	"myjson/internal/editor/format"
 	"myjson/internal/locales"
 )
@@ -51,7 +50,7 @@ func (e *DiffEditor) View(c *ui.Context) {
 			e.activeSide = focusSide
 		}
 		if e.comparing {
-			e.preview.Theme = editor.Theme(c.Theme())
+			e.preview.Theme = e.left.Theme
 			e.preview.Wrap = e.WrapEnabled()
 			preview := mygoeditor.DiffView(c.Key("preview"), &e.preview).Fill().MinHeight(0).
 				Radius(0, 0, 13, 13).Clip().Focusable().FocusRing(false).Label(locales.DiffPreviewLabel())

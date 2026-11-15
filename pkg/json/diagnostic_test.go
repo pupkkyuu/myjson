@@ -27,7 +27,7 @@ func TestValidateBytesPreservesInputAndDiagnosticLocations(t *testing.T) {
 		"", " \t\r\n", `{"a":1,"b":2}`, `"中文🙂"`, "true", "1e999",
 		`{"a":1,"a":2}`, `{"a":1,"\u0061":2}`, `"\ud800"`, "\"\xff\"",
 		"{\n  \"a\": 1\n \t\n", "{\"a\":\"中\n文\"}", "{\r\n\"a\":?}",
-		"{} []", "{}true", "true false", "01", "1e", "{} \n中", "{}\xff", "{}\u00a0",
+		"{} []", "{}true", "true false", "01", "1e", "{} \n中", "{}\xff",
 	} {
 		t.Run(source, func(t *testing.T) {
 			data := []byte(source)

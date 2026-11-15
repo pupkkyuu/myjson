@@ -2,10 +2,7 @@ package app
 
 import (
 	"fmt"
-	"image/png"
 	"math"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -83,11 +80,6 @@ func TestWorkspaceHeaderGeometry(t *testing.T) {
 							}
 						}
 					}
-					if directory := os.Getenv("MYJSON_TEST_SCREENSHOTS"); directory != "" && width == 1000 && sidebarWidth == 180 {
-						app.sidebarOpen = true
-						tt.Frame()
-						saveFrame(t, tt, directory, platform+"-editor.png")
-					}
 				})
 			}
 		}
@@ -135,22 +127,6 @@ func TestDocumentTitleUsesAvailableLeftEdge(t *testing.T) {
 	title, ok = tt.Find(app.active.Title())
 	if !ok || title.X < 128 {
 		t.Fatalf("侧栏收起时标题应避让交通灯及侧栏开关：%+v", title)
-	}
-}
-
-func saveFrame(t *testing.T, tt *ui.Tester, directory, name string) {
-	t.Helper()
-	if err := os.MkdirAll(directory, 0755); err != nil {
-		t.Fatal(err)
-	}
-	f, err := os.Create(filepath.Join(directory, name))
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = png.Encode(f, tt.Image())
-	closeErr := f.Close()
-	if err != nil || closeErr != nil {
-		t.Fatalf("保存布局截图失败：%v / %v", err, closeErr)
 	}
 }
 

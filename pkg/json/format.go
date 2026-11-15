@@ -4,6 +4,7 @@ import (
 	"encoding/json/jsontext"
 	"errors"
 	"fmt"
+	"strings"
 )
 
 // Format 按 jsontext 默认规则验证并格式化 JSON。
@@ -12,12 +13,23 @@ func Format(source string) (string, error) {
 }
 
 // FormatWithIndent 使用指定的每级缩进格式化 JSON；缩进只能包含空格或制表符。
+// 非法缩进返回空结果及错误。
 func FormatWithIndent(source, indent string) (string, error) {
+	if err := validateIndent(indent); err != nil {
+		return "", err
+	}
 	output, err := jsontext.AppendFormat(nil, source, jsontext.WithIndent(indent))
 	if err != nil {
 		return "", syntaxErrorWithLocation(source, err)
 	}
 	return string(output), nil
+}
+
+func validateIndent(indent string) error {
+	if strings.Trim(indent, " \t") != "" {
+		return errors.New("json: indent must contain only spaces or tabs")
+	}
+	return nil
 }
 
 type LocationError struct {

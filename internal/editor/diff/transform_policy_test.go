@@ -119,3 +119,36 @@ func TestSkippedBlankSideDoesNotCommitWhenOtherSideFails(t *testing.T) {
 		})
 	}
 }
+
+func TestSuccessfulJSONTransformsClearDiagnostics(t *testing.T) {
+	for _, action := range []struct {
+		name   string
+		single func(*format.FormatEditor)
+		paired func(*DiffEditor)
+	}{
+		{"格式化", (*format.FormatEditor).Format, (*DiffEditor).Format},
+		{"压缩", (*format.FormatEditor).Compact, (*DiffEditor).Compact},
+		{"排序", (*format.FormatEditor).SortFields, (*DiffEditor).SortFields},
+		{"转义", (*format.FormatEditor).Escape, (*DiffEditor).Escape},
+	} {
+		t.Run(action.name, func(t *testing.T) {
+			seedDiagnostics := func(pane *format.FormatEditor) {
+				pane.SetDiagnostics(pane.Buffer.Version(), editor.Diagnostics(json.Validate("{")))
+			}
+			source := `{ "z": 2, "a": 1 }`
+			single, paired := transformBothEditors(t, source, source, func(e *format.FormatEditor) {
+				seedDiagnostics(e)
+				action.single(e)
+			}, func(e *DiffEditor) {
+				seedDiagnostics(e.left)
+				seedDiagnostics(e.right)
+				action.paired(e)
+			})
+			for _, pane := range []*format.FormatEditor{single, paired.left, paired.right} {
+				if len(pane.Diagnostics()) != 0 || len(json.Validate(pane.Buffer.String())) != 0 {
+					t.Fatalf("成功输出应为合法 JSON 并清除旧诊断：文本 %q，诊断 %+v", pane.Buffer.String(), pane.Diagnostics())
+				}
+			}
+		})
+	}
+}

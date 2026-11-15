@@ -2,9 +2,6 @@ package settings
 
 import (
 	"fmt"
-	"image/png"
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/egoist/mygo/ui"
@@ -147,26 +144,6 @@ func TestNewSettingsCategoriesLayout(t *testing.T) {
 						}
 						tt.Key(0, ui.KeyEscape)
 						revealSetting(t, tt, labels[len(labels)-1])
-						if dir := os.Getenv("MYJSON_TEST_SCREENSHOTS"); dir != "" {
-							if err := os.MkdirAll(dir, 0755); err != nil {
-								t.Fatal(err)
-							}
-							for _, position := range []string{"bottom", "top"} {
-								if position == "top" {
-									tt.Scroll(panel.X+panel.W-25, panel.Y+panel.H/2, 0, -10000)
-								}
-								name := fmt.Sprintf("%s-%d-scale-%g-dark-%v-%s.png", category, width, scale, dark, position)
-								f, err := os.Create(filepath.Join(dir, name))
-								if err != nil {
-									t.Fatal(err)
-								}
-								err = png.Encode(f, tt.Image())
-								closeErr := f.Close()
-								if err != nil || closeErr != nil {
-									t.Fatalf("保存截图：%v / %v", err, closeErr)
-								}
-							}
-						}
 					})
 				}
 			}

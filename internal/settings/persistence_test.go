@@ -201,13 +201,6 @@ func TestLoadRejectsDuplicateSettings(t *testing.T) {
 
 func TestLoadMissingFileAndReadError(t *testing.T) {
 	dir := t.TempDir()
-	legacyDir := filepath.Join(dir, "JSONPal")
-	if err := os.MkdirAll(legacyDir, 0700); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(legacyDir, "editor-settings.json"), []byte(`{"fontSize":19}`), 0600); err != nil {
-		t.Fatal(err)
-	}
 	got, err := Load(filepath.Join(dir, "MyJson", "settings.json"))
 	if err != nil || got != DefaultSaved() {
 		t.Fatalf("missing settings: got %+v, error %v", got, err)

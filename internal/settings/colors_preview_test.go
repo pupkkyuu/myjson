@@ -2,9 +2,6 @@ package settings
 
 import (
 	"fmt"
-	"image/png"
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/egoist/mygo/ui"
@@ -63,20 +60,6 @@ func TestColorSettingsLayout(t *testing.T) {
 				r := control.Bounds
 				if !ok || r.W <= 0 || r.X < 0 || r.X+r.W > float32(tc.w)+1 {
 					t.Fatalf("配色选择器越界 %s: %+v", label, r)
-				}
-			}
-			if dir := os.Getenv("MYJSON_TEST_SCREENSHOTS"); dir != "" {
-				if err := os.MkdirAll(dir, 0755); err != nil {
-					t.Fatal(err)
-				}
-				f, err := os.Create(filepath.Join(dir, fmt.Sprintf("colors-%dx%d-%g.png", tc.w, tc.h, tc.scale)))
-				if err != nil {
-					t.Fatal(err)
-				}
-				err = png.Encode(f, tt.Image())
-				cerr := f.Close()
-				if err != nil || cerr != nil {
-					t.Fatalf("保存截图失败：%v / %v", err, cerr)
 				}
 			}
 		})

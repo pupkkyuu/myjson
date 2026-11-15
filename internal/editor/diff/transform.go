@@ -19,7 +19,7 @@ func (e *DiffEditor) Loading() bool {
 func (e *DiffEditor) TransformEnabled() bool { return !e.comparing && !e.Loading() }
 
 // transform 异步处理左右文档快照，任一侧失败时停止后续处理。
-func (e *DiffEditor) transform(transform func(string) (string, error)) {
+func (e *DiffEditor) transform(transform func(string) (string, error), policy format.OutputPolicy) {
 	if !e.TransformEnabled() {
 		return
 	}
@@ -34,7 +34,7 @@ func (e *DiffEditor) transform(transform func(string) (string, error)) {
 		}
 		for i, snapshot := range snapshots {
 			r := &prepared[i]
-			r.PreparedTransform, r.err = format.PrepareTransform(snapshot, transform)
+			r.PreparedTransform, r.err = format.PrepareTransform(snapshot, transform, policy)
 			if r.err != nil {
 				break
 			}
