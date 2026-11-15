@@ -2,9 +2,6 @@ package settings
 
 import (
 	"fmt"
-	"image/png"
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/egoist/mygo"
@@ -73,20 +70,6 @@ func TestAboutLayout(t *testing.T) {
 				}
 				if len(tt.OpenedURLs()) != 1 {
 					t.Fatal("窄窗口中无法点击仓库链接")
-				}
-				if dir := os.Getenv("MYJSON_TEST_SCREENSHOTS"); dir != "" {
-					if err := os.MkdirAll(dir, 0755); err != nil {
-						t.Fatal(err)
-					}
-					f, err := os.Create(filepath.Join(dir, fmt.Sprintf("about-%d-dark-%v.png", width, dark)))
-					if err != nil {
-						t.Fatal(err)
-					}
-					err = png.Encode(f, tt.Image())
-					closeErr := f.Close()
-					if err != nil || closeErr != nil {
-						t.Fatalf("保存关于页截图：%v / %v", err, closeErr)
-					}
 				}
 			})
 		}

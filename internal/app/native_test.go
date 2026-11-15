@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"image/png"
 	"os"
-	"path/filepath"
 	"runtime"
 	"testing"
 	"time"
@@ -144,7 +143,7 @@ func TestNativeWorkspace(t *testing.T) {
 			}
 			w.Invalidate()
 		})
-		saveNativeFrame(t, w, "native-"+mode.name+".png", mode.width, 220*time.Millisecond)
+		verifyNativeFrame(t, w, "native-"+mode.name, mode.width, 220*time.Millisecond)
 		mygo.RunOnMain(func() {
 			if app.settingState.Open != mode.settings || mode.settings && app.settingState.Category != "appearance" {
 				t.Errorf("%s 设置打开状态或默认分类错误：%+v", mode.name, app.settingState)
@@ -204,11 +203,11 @@ func TestNativeToasts(t *testing.T) {
 			w.SetSize(mode.width, 650)
 			w.Invalidate()
 		})
-		saveNativeFrame(t, w, "native-toast-"+mode.name+".png", mode.width, 350*time.Millisecond)
+		verifyNativeFrame(t, w, "native-toast-"+mode.name, mode.width, 350*time.Millisecond)
 	}
 }
 
-func saveNativeFrame(t *testing.T, w *mygo.Window, name string, width int, delay time.Duration) {
+func verifyNativeFrame(t *testing.T, w *mygo.Window, name string, width int, delay time.Duration) {
 	t.Helper()
 	if _, err := w.CapturePage(); err != nil {
 		t.Fatal(err)
@@ -220,16 +219,6 @@ func saveNativeFrame(t *testing.T, w *mygo.Window, name string, width int, delay
 	}
 	img, err := png.Decode(bytes.NewReader(data))
 	if err != nil || img.Bounds().Dx() < width {
-		t.Fatalf("%s 原生截图错误：%v", name, err)
-	}
-	directory := os.Getenv("MYJSON_TEST_SCREENSHOTS")
-	if directory == "" {
-		directory = t.TempDir()
-	}
-	if err := os.MkdirAll(directory, 0755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(directory, name), data, 0644); err != nil {
-		t.Fatal(err)
+		t.Fatalf("%s 原生渲染错误：%v", name, err)
 	}
 }

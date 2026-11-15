@@ -28,14 +28,25 @@ var vsDark = buildTheme(Palette{
 	comment:     "#608B4E",
 })
 
-func Theme(t *ui.Theme) *mygoeditor.Theme {
+// ThemeCache 复用颜色不变的编辑器主题，不依赖逐帧重建的 UI 主题指针。
+// 缓存由所属编辑器在 UI 线程使用，返回的主题只读。
+type ThemeCache struct {
+	theme *mygoeditor.Theme
+	dark  bool
+}
+
+func (cache *ThemeCache) Resolve(t *ui.Theme) *mygoeditor.Theme {
+	if cache.theme != nil && cache.dark == t.Dark && cache.theme.Background == t.Surface {
+		return cache.theme
+	}
 	base := vsLight
 	if t.Dark {
 		base = vsDark
 	}
 	theme := *base
 	theme.Background = t.Surface
-	return &theme
+	cache.theme, cache.dark = &theme, t.Dark
+	return cache.theme
 }
 
 func buildTheme(palette Palette) *mygoeditor.Theme {

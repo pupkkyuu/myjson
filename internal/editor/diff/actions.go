@@ -11,24 +11,24 @@ import (
 
 func (e *DiffEditor) Format() {
 	indent := strings.Repeat(" ", max(1, e.left.TabSize))
-	e.transform(format.SkipBlank(func(source string) (string, error) { return json.FormatWithIndent(source, indent) }))
+	e.transform(format.SkipBlank(func(source string) (string, error) { return json.FormatWithIndent(source, indent) }), format.ValidJSONOutput)
 }
 
 func (e *DiffEditor) Compact() {
-	e.transform(format.SkipBlank(json.Compact))
+	e.transform(format.SkipBlank(json.Compact), format.ValidJSONOutput)
 }
 
 func (e *DiffEditor) Escape() {
-	e.transform(json.Escape)
+	e.transform(json.Escape, format.ValidJSONOutput)
 }
 
 func (e *DiffEditor) Unescape() {
-	e.transform(json.Unescape)
+	e.transform(json.Unescape, format.ValidateOutput)
 }
 
 func (e *DiffEditor) SortFields() {
 	indent := strings.Repeat(" ", max(1, e.left.TabSize))
-	e.transform(format.SkipBlank(func(source string) (string, error) { return json.SortFieldsWithIndent(source, indent) }))
+	e.transform(format.SkipBlank(func(source string) (string, error) { return json.SortFieldsWithIndent(source, indent) }), format.ValidJSONOutput)
 }
 
 func (e *DiffEditor) FoldAll() {

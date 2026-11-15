@@ -2,9 +2,6 @@ package component
 
 import (
 	"fmt"
-	"image/png"
-	"os"
-	"path/filepath"
 	"slices"
 	"testing"
 	"time"
@@ -236,21 +233,6 @@ func TestToastsLayoutAcrossThemesAndScales(t *testing.T) {
 			}
 			if tt.FramePending() {
 				t.Fatal("动画结束后提示仍持续重绘")
-			}
-			if directory := os.Getenv("MYJSON_TEST_SCREENSHOTS"); directory != "" {
-				if err := os.MkdirAll(directory, 0755); err != nil {
-					t.Fatal(err)
-				}
-				name := fmt.Sprintf("toast-%d-dark-%v-scale-%g-%s.png", width, dark, scale, kind)
-				f, err := os.Create(filepath.Join(directory, name))
-				if err != nil {
-					t.Fatal(err)
-				}
-				err = png.Encode(f, tt.Image())
-				closeErr := f.Close()
-				if err != nil || closeErr != nil {
-					t.Fatalf("保存提示截图失败：%v / %v", err, closeErr)
-				}
 			}
 		})
 	}

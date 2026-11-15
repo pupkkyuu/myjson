@@ -10,24 +10,24 @@ import (
 
 func (e *FormatEditor) Format() {
 	indent := strings.Repeat(" ", max(1, e.TabSize))
-	e.transform(SkipBlank(func(source string) (string, error) { return json.FormatWithIndent(source, indent) }))
+	e.transform(SkipBlank(func(source string) (string, error) { return json.FormatWithIndent(source, indent) }), ValidJSONOutput)
 }
 
 func (e *FormatEditor) Compact() {
-	e.transform(SkipBlank(json.Compact))
+	e.transform(SkipBlank(json.Compact), ValidJSONOutput)
 }
 
 func (e *FormatEditor) Escape() {
-	e.transform(json.Escape)
+	e.transform(json.Escape, ValidJSONOutput)
 }
 
 func (e *FormatEditor) Unescape() {
-	e.transform(json.Unescape)
+	e.transform(json.Unescape, ValidateOutput)
 }
 
 func (e *FormatEditor) SortFields() {
 	indent := strings.Repeat(" ", max(1, e.TabSize))
-	e.transform(SkipBlank(func(source string) (string, error) { return json.SortFieldsWithIndent(source, indent) }))
+	e.transform(SkipBlank(func(source string) (string, error) { return json.SortFieldsWithIndent(source, indent) }), ValidJSONOutput)
 }
 
 func (e *FormatEditor) FoldAll() {

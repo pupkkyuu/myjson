@@ -48,13 +48,53 @@ func TestCompact(t *testing.T) {
 
 func TestFormatWithIndent(t *testing.T) {
 	t.Parallel()
-	for _, indent := range []string{"", "\t", "    "} {
+	for _, indent := range []string{"", "\t", "    ", " \t "} {
 		t.Run(indent, func(t *testing.T) {
 			source := ` {"a":[1]} `
 			want := "{\n" + indent + "\"a\": [\n" + indent + indent + "1\n" + indent + "]\n}"
 			got, err := json.FormatWithIndent(source, indent)
 			if err != nil || got != want {
 				t.Fatalf("自定义缩进结果 = %q，错误 = %v；期望 %q", got, err, want)
+			}
+		})
+	}
+}
+
+func TestSortFieldsWithIndent(t *testing.T) {
+	t.Parallel()
+	for _, indent := range []string{"", "\t", "    ", " \t "} {
+		t.Run(indent, func(t *testing.T) {
+			source := ` {"z":0,"a":{"b":2,"a":1}} `
+			want := "{\n" + indent + "\"a\": {\n" + indent + indent + "\"a\": 1,\n" + indent + indent + "\"b\": 2\n" + indent + "},\n" + indent + "\"z\": 0\n}"
+			got, err := json.SortFieldsWithIndent(source, indent)
+			if err != nil || got != want {
+				t.Fatalf("自定义缩进排序结果 = %q，错误 = %v；期望 %q", got, err, want)
+			}
+		})
+	}
+}
+
+func TestTransformsRejectInvalidIndent(t *testing.T) {
+	t.Parallel()
+	for name, transform := range map[string]func(string, string) (string, error){
+		"FormatWithIndent":     json.FormatWithIndent,
+		"SortFieldsWithIndent": json.SortFieldsWithIndent,
+	} {
+		t.Run(name, func(t *testing.T) {
+			for _, indent := range []string{"x", "  x", "\t.\t", "\n", "\r", "\r\n", "\v", "\f", "\x00", "\u00a0", "\u3000", "\xff"} {
+				t.Run(indent, func(t *testing.T) {
+					for _, source := range []string{`{"b":2,"a":1}`, "", "{"} {
+						got, err := transform(source, indent)
+						if got != "" || err == nil {
+							t.Fatalf("非法缩进 %q 应返回空结果及错误，输入 %q，得到 %q，%v", indent, source, got, err)
+						}
+						var located *json.LocationError
+						var syntax *jsontext.SyntacticError
+						if !strings.Contains(err.Error(), "indent") || errors.As(err, &located) || errors.As(err, &syntax) {
+							t.Fatalf("非法缩进应报告参数错误，得到 %v", err)
+						}
+					}
+				})
 			}
 		})
 	}

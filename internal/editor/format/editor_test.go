@@ -35,7 +35,7 @@ func TestIdentityAndInitialState(t *testing.T) {
 		if e.ID() != id || e.Title() != locales.FormatTabTitle(strings.TrimPrefix(id, "editor-")) || e.Label != locales.EditorLabel() || e.Placeholder != locales.EditorPlaceholder() {
 			t.Fatalf("编辑器标识或文案不正确：%s，%q", e.ID(), e.Title())
 		}
-		if e.Buffer.String() != `{"a":1}` || e.Loading() || !e.CopyEnabled() || e.deadline.IsZero() {
+		if e.Buffer.String() != `{"a":1}` || e.Loading() || !e.CopyEnabled() || !e.deadline.IsZero() {
 			t.Fatal("初始文档或操作状态不正确")
 		}
 	}
@@ -145,7 +145,7 @@ func TestTransformsPreservePositionUnlessTextChanges(t *testing.T) {
 				close(started)
 				<-release
 				return tc.run(source)
-			})
+			}, ValidateOutput)
 			waitForEditor(t, started)
 			// 后台运行期间的位置变化也必须保留，不能恢复任务启动时的位置。
 			e.SetSelections(
@@ -240,10 +240,10 @@ func TestStaleAndDuplicateTransforms(t *testing.T) {
 				close(started)
 				<-release
 				return `{"old":true}`, nil
-			})
+			}, ValidateOutput)
 			waitForEditor(t, started)
 			duplicate := make(chan struct{}, 1)
-			e.transform(func(string) (string, error) { duplicate <- struct{}{}; return "null", nil })
+			e.transform(func(string) (string, error) { duplicate <- struct{}{}; return "null", nil }, ValidateOutput)
 			want := `{"new":true}`
 			if shouldClear {
 				e.Clear()
@@ -293,7 +293,7 @@ func TestClearEmptyDocumentCancelsTransform(t *testing.T) {
 				close(started)
 				<-release
 				return tc.transform(source)
-			})
+			}, ValidateOutput)
 			waitForEditor(t, started)
 			if tc.ready {
 				close(release)
@@ -340,7 +340,7 @@ func TestClearAllowsNewTransformBeforeCanceledTaskFinishes(t *testing.T) {
 					close(started[i])
 					<-release[i]
 					return texts[i], nil
-				})
+				}, ValidateOutput)
 				waitForEditor(t, started[i])
 				if i == 0 {
 					e.Clear()
@@ -534,6 +534,61 @@ func TestDebouncedDiagnosticsAndRecovery(t *testing.T) {
 	}
 }
 
+func TestInitialDiagnosticsUseContextClock(t *testing.T) {
+	for _, advance := range []time.Duration{0, time.Hour} {
+		t.Run(advance.String(), func(t *testing.T) {
+			var e *FormatEditor
+			tt := ui.NewTester(func(c *ui.Context) {
+				if e != nil {
+					e.View(c)
+				}
+			}, 900, 600)
+			tt.Advance(advance)
+			e = NewFormatEditor("editor-1", `{"a":}`)
+			wake := make(chan struct{}, 8)
+			e.Invalidate = func() { wake <- struct{}{} }
+			tt.Frame()
+			if want := tt.Now().Add(300 * time.Millisecond); !e.deadline.Equal(want) || e.diagnosing {
+				t.Fatalf("初始诊断应从 UI 时钟开始计时：截止时间 %v，期望 %v，运行中 %v", e.deadline, want, e.diagnosing)
+			}
+			tt.Advance(299 * time.Millisecond)
+			if e.diagnosing || len(e.Diagnostics()) != 0 {
+				t.Fatal("初始诊断不应在 300 毫秒前执行")
+			}
+			tt.Advance(time.Millisecond)
+			waitForEditor(t, wake)
+			tt.Frame()
+			if e.diagnosing || len(e.Diagnostics()) != 1 || !e.deadline.IsZero() {
+				t.Fatal("初始诊断应在 UI 时钟推进 300 毫秒后提交")
+			}
+		})
+	}
+}
+
+func TestTransformDiagnosticsBeforeFirstUpdate(t *testing.T) {
+	for _, action := range []string{"prepared", "async-error"} {
+		t.Run(action, func(t *testing.T) {
+			e := NewFormatEditor("editor-1", `{"a":}`)
+			wake := make(chan struct{}, 8)
+			e.Invalidate = func() { wake <- struct{}{} }
+			if action == "prepared" {
+				result, err := PrepareTransform(e.Buffer.Snapshot(), json.Format, ValidJSONOutput)
+				if err == nil || !e.ApplyTransform(result) {
+					t.Fatal("应提交预处理的错误诊断")
+				}
+			} else {
+				e.Format()
+				waitForEditor(t, wake)
+			}
+			tt := ui.NewTester(e.View, 900, 600)
+			tt.Advance(time.Second)
+			if e.diagnosing || !e.deadline.IsZero() || len(e.Diagnostics()) != 1 {
+				t.Fatal("首次更新应保留已提交的变换诊断，不应重复调度")
+			}
+		})
+	}
+}
+
 func TestBackgroundWorkWithoutInvalidate(t *testing.T) {
 	e := NewFormatEditor("editor-1", "")
 	tt := ui.NewTester(e.View, 900, 600)
@@ -556,7 +611,7 @@ func TestBackgroundWorkWithoutInvalidate(t *testing.T) {
 	e.transform(func(source string) (string, error) {
 		<-release
 		return json.Format(source)
-	})
+	}, ValidateOutput)
 	tt.Frame()
 	close(release)
 	select {

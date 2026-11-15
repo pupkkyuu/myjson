@@ -11,7 +11,7 @@ import (
 )
 
 // transform 异步处理当前文档快照，并在完成后通知界面刷新。
-func (e *FormatEditor) transform(transform func(string) (string, error)) {
+func (e *FormatEditor) transform(transform func(string) (string, error), policy OutputPolicy) {
 	if e.Loading() {
 		return
 	}
@@ -22,7 +22,7 @@ func (e *FormatEditor) transform(transform func(string) (string, error)) {
 	e.transformPolling = wake == nil
 
 	go func() {
-		prepared, err := PrepareTransform(snapshot, transform)
+		prepared, err := PrepareTransform(snapshot, transform, policy)
 		results <- transformResult{PreparedTransform: prepared, err: err}
 
 		if wake != nil {
@@ -40,6 +40,7 @@ func (e *FormatEditor) refreshTransform(c *ui.Context) {
 		c.Invalidate()
 		if r.Version == e.Buffer.Version() {
 			if r.err != nil {
+				e.diagnosticsInitialized = true
 				e.version = r.Version
 				e.deadline = time.Time{}
 				e.SetDiagnostics(r.Version, editor.Diagnostics(r.Diagnostics))
@@ -72,6 +73,7 @@ func (e *FormatEditor) ApplyTransform(result PreparedTransform) bool {
 		e.Select(0, 0)
 		e.ScrollTo(0)
 	}
+	e.diagnosticsInitialized = true
 	e.version = e.Buffer.Version()
 	e.deadline = time.Time{}
 	e.SetDiagnostics(e.version, editor.Diagnostics(result.Diagnostics))

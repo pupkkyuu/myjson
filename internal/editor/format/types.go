@@ -17,15 +17,17 @@ type FormatEditor struct {
 	title string
 	focus ui.Handle
 	mygoeditor.State
+	theme editor.ThemeCache
 
 	pendingTransform  chan transformResult
 	diagnosticResult  chan diagnosticsResult
 	transformPolling  bool
 	diagnosticPolling bool
 
-	version    uint64
-	deadline   time.Time
-	diagnosing bool
+	version                uint64
+	deadline               time.Time
+	diagnosing             bool
+	diagnosticsInitialized bool
 
 	Invalidate func()
 }
@@ -70,10 +72,6 @@ func NewFormatEditor(id string, content string, preferences ...editor.Preference
 	}
 	e.ApplyPreferences(p)
 	e.SoftWrap = p.DefaultWrap
-
-	if buffer.Len() != 0 {
-		e.deadline = time.Now().Add(300 * time.Millisecond)
-	}
 
 	return e
 }

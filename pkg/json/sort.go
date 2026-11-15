@@ -9,8 +9,12 @@ func SortFields(source string) (string, error) {
 	return SortFieldsWithIndent(source, "  ")
 }
 
-// SortFieldsWithIndent 递归排序对象键，并使用指定缩进格式化。
+// SortFieldsWithIndent 递归排序对象键，并使用指定缩进格式化；缩进只能包含空格或制表符。
+// 非法缩进返回空结果及错误。
 func SortFieldsWithIndent(source, indent string) (string, error) {
+	if err := validateIndent(indent); err != nil {
+		return "", err
+	}
 	output := jsontext.Value(source)
 	if err := output.Format(jsontext.ReorderRawObjects(true), jsontext.WithIndent(indent)); err != nil {
 		return "", syntaxErrorWithLocation(source, err)

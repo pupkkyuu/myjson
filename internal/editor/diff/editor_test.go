@@ -74,6 +74,24 @@ func TestDiffIdentityAndSharedBuffers(t *testing.T) {
 	}
 }
 
+func TestPreviewReusesInputTheme(t *testing.T) {
+	e := NewDiffEditor("editor-1", "{}", "[]")
+	tt, _ := mountDiff(e)
+	e.ToggleComparison()
+	tt.Frame()
+	for _, dark := range []bool{false, true, false} {
+		tt.SetDark(dark)
+		left, right := e.left.Theme, e.right.Theme
+		if left == nil || right == nil || e.preview.Theme != left || *left != *right {
+			t.Fatal("预览应复用输入区主题，左右编辑器颜色应一致")
+		}
+		tt.Frame()
+		if e.left.Theme != left || e.right.Theme != right || e.preview.Theme != left {
+			t.Fatal("颜色不变的帧不应重建编辑器主题")
+		}
+	}
+}
+
 func TestInputSplitResizeAndRestore(t *testing.T) {
 	e := NewDiffEditor("editor-1", `{"left":1}`, `{"right":2}`)
 	tt, _ := mountDiff(e)
@@ -231,7 +249,7 @@ func TestPairedTransformInvalidation(t *testing.T) {
 					<-release
 				}
 				return json.Format(source)
-			})
+			}, format.ValidateOutput)
 			awaitDiff(t, started)
 			switch mode {
 			case "编辑左侧":
@@ -282,7 +300,7 @@ func TestClearAllowsNewPairedTransform(t *testing.T) {
 						<-release[i]
 					}
 					return []string{`{"old":true}`, `{"new":true}`}[i], nil
-				})
+				}, format.ValidateOutput)
 				awaitDiff(t, started[i])
 				if i == 0 {
 					e.Clear()
@@ -349,10 +367,10 @@ func TestLoadingAndPreviewRejectTransforms(t *testing.T) {
 		}
 		<-release
 		return source, nil
-	})
+	}, format.ValidateOutput)
 	awaitDiff(t, started)
 	duplicate := make(chan struct{}, 1)
-	e.transform(func(string) (string, error) { duplicate <- struct{}{}; return "null", nil })
+	e.transform(func(string) (string, error) { duplicate <- struct{}{}; return "null", nil }, format.ValidateOutput)
 	close(release)
 	awaitDiff(t, wake)
 	tt.Frame()

@@ -7,7 +7,6 @@ import (
 	mygoeditor "github.com/egoist/mygo/ui/editor"
 
 	"myjson/internal/component"
-	"myjson/internal/editor"
 )
 
 func (e *FormatEditor) View(c *ui.Context) {
@@ -27,7 +26,7 @@ func (e *FormatEditor) View(c *ui.Context) {
 
 // Update 接收后台结果并调度诊断，输入区隐藏时也可继续调用。
 func (e *FormatEditor) Update(c *ui.Context) {
-	e.State.Theme = editor.Theme(c.Theme())
+	e.State.Theme = e.theme.Resolve(c.Theme())
 	e.refreshTransform(c)
 	e.refreshDiagnostics(c)
 }

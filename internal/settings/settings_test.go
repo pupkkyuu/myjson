@@ -2,9 +2,6 @@ package settings
 
 import (
 	"fmt"
-	"image/png"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -215,21 +212,6 @@ func TestSettingsSidebarLayoutWithoutSearch(t *testing.T) {
 					for _, text := range tt.Texts() {
 						if strings.Contains(text, "搜索") || strings.Contains(strings.ToLower(text), "search") {
 							t.Fatalf("仍渲染设置搜索：%q", text)
-						}
-					}
-					if directory := os.Getenv("MYJSON_TEST_SCREENSHOTS"); directory != "" {
-						if err := os.MkdirAll(directory, 0755); err != nil {
-							t.Fatal(err)
-						}
-						name := fmt.Sprintf("settings-%dx%d-dark-%v-scale-%g.png", width, height, dark, scale)
-						f, err := os.Create(filepath.Join(directory, name))
-						if err != nil {
-							t.Fatal(err)
-						}
-						err = png.Encode(f, tt.Image())
-						closeErr := f.Close()
-						if err != nil || closeErr != nil {
-							t.Fatalf("保存设置截图失败：%v / %v", err, closeErr)
 						}
 					}
 					clickSettingControl(t, tt, locales.Theme())

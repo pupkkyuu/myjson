@@ -12,7 +12,9 @@ import (
 
 func (e *FormatEditor) refreshDiagnostics(c *ui.Context) {
 	version := e.Buffer.Version()
-	if e.version != version {
+	// 首次更新时才有 UI 时钟，初始诊断和后续编辑使用同一计时来源。
+	if !e.diagnosticsInitialized || e.version != version {
+		e.diagnosticsInitialized = true
 		e.version = version
 		e.SetDiagnostics(version, nil)
 		e.deadline = time.Time{}

@@ -25,7 +25,8 @@ func TestSyntaxThemeColors(t *testing.T) {
 			if tc.dark {
 				palette = ui.DarkTheme()
 			}
-			theme := editor.Theme(palette)
+			var cache editor.ThemeCache
+			theme := cache.Resolve(palette)
 			if theme.Text != ui.Hex(tc.text) {
 				t.Fatal("默认文本颜色不符合主题")
 			}
@@ -64,5 +65,50 @@ func TestDiagnosticConversion(t *testing.T) {
 	got[0].Start = 100
 	if source[0].Start != 3 {
 		t.Fatal("转换结果不应与输入共享可变数据")
+	}
+}
+
+func TestThemeCacheFollowsColors(t *testing.T) {
+	var first, second editor.ThemeCache
+	palette := *ui.LightTheme()
+	light := first.Resolve(&palette)
+	if light.Background != palette.Surface {
+		t.Fatal("编辑器背景应使用 UI 主题的 Surface")
+	}
+	frameTheme := palette
+	frameTheme.FontSize *= 1.5
+	if first.Resolve(&frameTheme) != light {
+		t.Fatal("相同深浅色和背景色应复用主题，不依赖 UI 主题指针或字号")
+	}
+	other := second.Resolve(&palette)
+	palette.Surface = ui.Hex("#123456")
+	changed := first.Resolve(&palette)
+	if changed == light || changed.Background != palette.Surface || changed.Text != light.Text || changed.Tokens != light.Tokens {
+		t.Fatal("同一深浅色下切换背景应更新背景并保留语法颜色")
+	}
+	if light.Background != frameTheme.Surface || other.Background != frameTheme.Surface {
+		t.Fatal("更新缓存不应修改先前主题或其他编辑器的主题")
+	}
+	palette.Dark = true
+	dark := first.Resolve(&palette)
+	if dark == changed || dark.Text != ui.Hex("#DCDCDC") || dark.Background != palette.Surface {
+		t.Fatal("相同背景下切换深浅色也应更新语法颜色")
+	}
+	palette.Dark = false
+	restored := first.Resolve(&palette)
+	if restored.Text != light.Text || restored.Tokens != light.Tokens || restored.Background != palette.Surface {
+		t.Fatal("切回浅色应恢复语法颜色")
+	}
+}
+
+func TestThemeCacheHasNoSteadyStateAllocations(t *testing.T) {
+	var cache editor.ThemeCache
+	palette := *ui.LightTheme()
+	benchmarkTheme = cache.Resolve(&palette)
+	if allocations := testing.AllocsPerRun(100, func() {
+		frameTheme := palette
+		benchmarkTheme = cache.Resolve(&frameTheme)
+	}); allocations != 0 {
+		t.Fatalf("颜色不变时不应分配编辑器主题，得到 %g 次分配", allocations)
 	}
 }

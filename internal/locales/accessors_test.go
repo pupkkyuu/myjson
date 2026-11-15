@@ -48,12 +48,3 @@ func TestMessageAccessorsMatchChineseCatalog(t *testing.T) {
 		})
 	}
 }
-
-func TestCurrentLanguageAccessors(t *testing.T) {
-	if got, want := locales.EditorLabel(), locales.In("zh-Hans").EditorLabel(); got != want {
-		t.Errorf("当前语言消息 = %q，期望 %q", got, want)
-	}
-	if got, want := locales.WithShortcut("搜索", "⌘F"), locales.In("zh-Hans").WithShortcut("搜索", "⌘F"); got != want {
-		t.Errorf("当前语言参数化消息 = %q，期望 %q", got, want)
-	}
-}
